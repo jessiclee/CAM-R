@@ -68,6 +68,26 @@ def apply_mask(image_path, mask):
 
     return masked_image
 
+def detect_lanes(masked_image):
+    # Convert the masked image to grayscale
+    gray_image = cv2.cvtColor(masked_image, cv2.COLOR_BGR2GRAY)
+
+    # Use Canny edge detection
+    edges = cv2.Canny(gray_image, 50, 150)
+
+    # Use Hough Line Transform to detect lines
+    lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi/180, threshold=50, minLineLength=100, maxLineGap=50)
+
+    lane_count = 0
+    if lines is not None:
+        # Draw lines on the image (optional, for visualization)
+        for line in lines:
+            x1, y1, x2, y2 = line[0]
+            cv2.line(masked_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            lane_count += 1
+
+    return masked_image, lane_count
+
 def process_image(image_path):
     preprocessed_image = preprocess_image(image_path)
     road_mask = segment_road(preprocessed_image)
@@ -92,4 +112,11 @@ if __name__ == "__main__":
         # Apply the mask to the original image and save image
         masked_image = apply_mask(image_path, dominant_mask)
         cv2.imwrite('masks/' + image_name, masked_image)
+        
+        # Detect lanes
+        # masked_image_with_lanes, lane_count = detect_lanes(masked_image)
+        # cv2.imwrite('lane_roi/' + image_name, masked_image_with_lanes)
+        # print(f'Number of lanes detected: {lane_count}')
+        
+        
 
