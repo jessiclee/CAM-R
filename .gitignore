@@ -1,0 +1,5 @@
+*.jpg
+*.json
+image_retrieval/datamall_credentials.py
+image_retrieval/__pycache__
+image_retrieval/__pycache__/
