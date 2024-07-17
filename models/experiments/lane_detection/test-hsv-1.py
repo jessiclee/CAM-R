@@ -1,4 +1,10 @@
 # Based on this paper: https://informatika.stei.itb.ac.id/~rinaldi.munir/Penelitian/Makalah-TSSA-2021.pdf
+# Steps:
+# Convert the image from RGB to HSV color space.
+# Apply Gaussian blur to the image.
+# Perform HSV color model-based segmentation to create a binary mask.
+# Apply morphological operations (erosion and dilation) to refine the mask.
+# Extract the dominant segment by finding and selecting the largest contour.
 import cv2
 import numpy as np
 import os
