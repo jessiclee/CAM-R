@@ -7,7 +7,8 @@ from os.path import isdir
 from datetime import datetime, timedelta, timezone
 
 storage_credentials = {
-    1 : r'./fyp1433-google-storage.json'
+    1 : r'./fyp1433-google-storage.json',
+    2 : r'./fyp2234-google-storage.json'
 }
 
 directory_structure = ["images/AYER RAJAH EXPRESSWAY/4701/",
@@ -132,7 +133,7 @@ def create_bucket(bucket_name, account_choice):
 
     except Exception as e:
         print("There is an error, but double check if the folders have been created first.")
-        print(e)
+        print(e, "\n")
 
 def delete_images(bucket_name):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r'./fyp1433-google-storage.json'
@@ -227,10 +228,10 @@ def main():
         if choice == 1:
             bucket_name = input("What is your bucket name? (Must be unique): ")
             while True:
-                account_choice = int(input("To which Google Account? \n1 for FYP1433 \n2 for FYP2234 (Not implemented): "))
-                if account_choice == 1 or account_choice == 2:
+                account_choice = int(input("To which Google Account?: "))
+                if int(account_choice) <= len(storage_credentials) or int(account_choice) > 0:
                     break
-                print("Please enter 1 or 2")
+                print("Please enter a valid number")
             create_bucket(bucket_name, account_choice)
 
 
