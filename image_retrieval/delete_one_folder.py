@@ -104,27 +104,26 @@ directory_structure = ["images/AYER RAJAH EXPRESSWAY/4701/",
                        "images/WOODLANDS CHECKPOINT/2702/",
                        ]
 
-def download_images(bucket_name,local_file_path):
+
+def delete_images(bucket_name):
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r'./fyp1433-google-storage.json'
     try:
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
 
-        local_file_path = local_file_path.replace('\\', '/')
-        local_file_path = local_file_path.replace('"', '')
-
         file_list = storage_client.list_blobs(bucket_name, prefix = 'images/CENTRAL EXPRESSWAY/')
         file_list = [file.name for file in file_list]
         image_list = [file for file in file_list if file.endswith('.jpg')]
 
-        for image in image_list:
-            blob = bucket.blob(image)
-            path = local_file_path + '/' + blob.name
-            if isdir(path) == False:
-                make_directories(path)
-            blob.download_to_filename(path) 
+        for image_name in image_list:
+            blob = bucket.blob(image_name)
+            generation_match_precondition = None
+            blob.reload()  # Fetch blob metadata to use in generation_match_precondition.
+            generation_match_precondition = blob.generation
+
+            blob.delete(if_generation_match=generation_match_precondition)
     except Exception as e:
-        print("There is an error in downloading files")
+        print("There is an error in deleting files")
         print(e)
 
 def make_directories(path):
