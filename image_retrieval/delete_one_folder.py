@@ -111,7 +111,7 @@ def delete_images(bucket_name):
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
 
-        file_list = storage_client.list_blobs(bucket_name, prefix = 'images/CENTRAL EXPRESSWAY/')
+        file_list = storage_client.list_blobs(bucket_name, prefix = 'images/TAMPINES EXPRESSWAY')
         file_list = [file.name for file in file_list]
         image_list = [file for file in file_list if file.endswith('.jpg')]
 
@@ -126,13 +126,5 @@ def delete_images(bucket_name):
         print("There is an error in deleting files")
         print(e)
 
-def make_directories(path):
-    file_split = path.split("/")
-    directory = "/".join(file_split[0:-1])
-    Path(directory).mkdir(parents=True, exist_ok=True)
-
 bucket_name = "fyp-lta-test"
-local_file_path = "C:\\Users\\jesle\\Desktop\\fyp\\actual_data"
-
-
-download_images(bucket_name, local_file_path)
+delete_images(bucket_name)
