@@ -118,11 +118,16 @@ def download_images(bucket_name,local_file_path):
         image_list = [file for file in file_list if file.endswith('.jpg')]
 
         for image in image_list:
-            blob = bucket.blob(image)
-            path = local_file_path + '/' + blob.name
-            if isdir(path) == False:
-                make_directories(path)
-            blob.download_to_filename(path) 
+            try:
+                blob = bucket.blob(image)
+                path = local_file_path + '/' + blob.name
+                if isdir(path) == False:
+                    make_directories(path)
+                blob.download_to_filename(path) 
+            except Exception as e:
+                print("There is an error in downloading files")
+                print(e)
+        
     except Exception as e:
         print("There is an error in downloading files")
         print(e)
@@ -133,7 +138,6 @@ def make_directories(path):
     Path(directory).mkdir(parents=True, exist_ok=True)
 
 bucket_name = "fyp-lta-test"
-local_file_path = "C:\\Users\\jesle\\Desktop\\fyp\\actual_data"
-
+local_file_path = "E:\images" ## PLACE FILE NAME HERE
 
 download_images(bucket_name, local_file_path)
