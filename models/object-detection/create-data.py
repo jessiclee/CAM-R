@@ -65,8 +65,7 @@ def train_test_split(path,neg_path=None, split = 0.2):
     
     print("------ TASK COMPLETED -------")
 
-## spliting the data into train-test and creating train.txt and test.txt files
-# train_test_split('/content/drive/MyDrive/custom_notebooks/yolo_data/')
+## spliting the data into train-test and creating train.txt and test.txt file
 
-### for label_tag
+### Change path directory to local data
 train_test_split('C:/Users/kwekz/fyp/training-test/data/') ### without negative images
