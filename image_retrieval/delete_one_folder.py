@@ -111,7 +111,7 @@ def delete_images(bucket_name):
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
 
-        file_list = storage_client.list_blobs(bucket_name, prefix = 'images/TAMPINES EXPRESSWAY')
+        file_list = storage_client.list_blobs(bucket_name, prefix = 'images/TAMPINES EXPRESSWAY/1111')
         file_list = [file.name for file in file_list]
         image_list = [file for file in file_list if file.endswith('.jpg')]
 

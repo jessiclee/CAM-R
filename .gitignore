@@ -3,3 +3,5 @@
 image_retrieval/datamall_credentials.py
 image_retrieval/__pycache__
 image_retrieval/__pycache__/
+models/object-detection/yolo_data/
+checkpoints/
