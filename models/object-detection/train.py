@@ -34,12 +34,12 @@ model = models.get(MODEL_ARCH, pretrained_weights="coco")
 
 #parameters 
 EPOCHS = 5
-BATCH_SIZE = 16
-WORKERS = 2
+BATCH_SIZE = 32
+WORKERS = 8
 
 #directories
 CHECKPOINT_DIR = 'checkpoints'
-ROOT_DIR = 'C:/Users/kwekz/fyp/training-test/yolo_data'
+ROOT_DIR = 'C:/Users/kwekz/fyp/CAM-R/models/object-detection/yolo_data'
 train_imgs_dir = 'train/images'
 train_labels_dir = 'train/labels'
 val_imgs_dir = 'valid/images'
