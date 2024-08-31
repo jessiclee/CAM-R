@@ -19,6 +19,33 @@ def dhash(image, hashSize=8):
 	# convert the difference image to a hash and return it
 	return sum([2 ** i for (i, v) in enumerate(diff.flatten()) if v])
 
+def remove_dupes(path):
+    imagePaths = list(paths.list_images([path]))
+    hashes = {}
+    for imagePath in imagePaths:
+        # load the input image and compute the hash
+        image = cv2.imread(imagePath)
+        h = dhash(image)
+        # grab all image paths with that hash, add the current image
+        # path to it, and store the list back in the hashes dictionary
+        p = hashes.get(h, [])
+        p.append(imagePath)
+        hashes[h] = p
+    
+    for (h, hashedPaths) in hashes.items():
+        # check to see if there is more than one image with the same hash
+        if len(hashedPaths) > 1:
+            print("dupes detected! the following are duplicates:")
+            print(hashedPaths)
+            for p in hashedPaths[1:]:
+				os.remove(p)
+                # Also remove the associated .txt file if it exists
+                txt_file = os.path.splitext(p)[0] + ".txt"
+                if os.path.exists(txt_file):
+                    os.remove(txt_file)
+                    print(f"Associated text file {txt_file} removed.")
+            print("duplicates removed")
+
 def train_test_split(path,neg_path=None, split = 0.15):
     print("------ PROCESS STARTED -------")
     train_path_img = "./yolo_data/train/images/"
@@ -82,4 +109,5 @@ def train_test_split(path,neg_path=None, split = 0.15):
 ## spliting the data into train-test and creating train.txt and test.txt file
 
 ### Change path directory to local data
-train_test_split('C:/Users/kwekz/fyp/training-test/data/') ### without negative images
+remove_dupes('C:/Users/kwekz/fyp/training-test/data/')
+train_test_split('C:/Users/kwekz/fyp/training-test/data/') 
