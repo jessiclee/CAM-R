@@ -15,14 +15,6 @@ from super_gradients.training.metrics import (
 from super_gradients.training.models.detection_models.pp_yolo_e import PPYoloEPostPredictionCallback
 from tqdm.auto import tqdm
 
-import os
-import requests
-import zipfile
-import cv2
-import matplotlib.pyplot as plt
-import glob
-import numpy as np
-import random
 
 #load model 
 # DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'

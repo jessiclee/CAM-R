@@ -32,7 +32,7 @@ def remove_dupes(path):
         p = hashes.get(h, [])
         p.append(imagePath)
         hashes[h] = p
-    
+    count = 0
     print("hashes hashed")
     for (h, hashedPaths) in hashes.items():
         # check to see if there is more than one image with the same hash
@@ -40,13 +40,14 @@ def remove_dupes(path):
             print("dupes detected! the following are duplicates:")
             print(hashedPaths)
             for p in hashedPaths[1:]:
+                count += 1
                 os.remove(p)
                 # Also remove the associated .txt file if it exists
                 txt_file = os.path.splitext(p)[0] + ".txt"
                 if os.path.exists(txt_file):
                     os.remove(txt_file)
                     print(f"Associated text file {txt_file} removed.")
-            print("duplicates removed")
+    print(f'{count} duplicates detected')
     print("done")
     return
 
@@ -105,5 +106,5 @@ def train_test_split(path,neg_path=None, split = 0.15):
 ## spliting the data into train-test and creating train.txt and test.txt file
 
 ### Change path directory to local data
-# remove_dupes('C:/Users/User/CAM-R/models/object-detection/training')
+remove_dupes('C:/Users/User/CAM-R/models/object-detection/training')
 train_test_split('C:/Users/User/CAM-R/models/object-detection/training/') 
