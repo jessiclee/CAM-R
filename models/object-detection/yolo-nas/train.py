@@ -38,7 +38,7 @@ val_imgs_dir = 'valid/images'
 val_labels_dir = 'valid/labels'
 test_imgs_dir = 'test/images'
 test_labels_dir = 'test/labels'
-classes = ['Car', 'Motorcycle', 'Bus', 'Truck']
+classes = ['Bus', 'Truck', 'Motorcycle', 'Car']
 model_to_train = 'yolo_nas_l'
 
 dataset_params = {

@@ -14,9 +14,9 @@ trainer = Trainer(experiment_name="yolonas_evaluation_comparison")
 # Define dataset parameters
 dataset_params = {
     "data_dir": 'C:/Users/kwekz/fyp/CAM-R/models/object-detection/yolo_data',
-    "images_dir": 'valid/images',  # Directory containing validation images
-    "labels_dir": 'valid/labels',  # Directory containing YOLO format labels
-    "classes": ['Car', 'Motorcycle', 'Bus', 'Truck'],  # List of class names
+    "images_dir": 'test/images',  # Directory containing validation images
+    "labels_dir": 'test/labels',  # Directory containing YOLO format labels
+    "classes": ['Bus', 'Truck', 'Motorcycle', 'Car'],  # List of class names
 }
 
 metrics=DetectionMetrics_050(score_thres=0.1, 
