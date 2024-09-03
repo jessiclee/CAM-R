@@ -6,8 +6,12 @@ from super_gradients.training import models
 from super_gradients.training.metrics import DetectionMetrics_050
 from super_gradients.training.models.detection_models.pp_yolo_e import PPYoloEPostPredictionCallback
 
+import time
+import torch
+
+
 BATCH_SIZE = 32
-WORKERS = 8
+WORKERS = 6
 # Initialize the Trainer
 trainer = Trainer(experiment_name="yolonas_evaluation_comparison")
 
@@ -26,7 +30,11 @@ metrics=DetectionMetrics_050(score_thres=0.1,
                                         post_prediction_callback=PPYoloEPostPredictionCallback(score_threshold=0.01, 
                                                                                                 nms_top_k=1000, 
                                                                                                 max_predictions=300,                                                                              
-                                                                                                nms_threshold=0.7)
+                                                                                                nms_threshold=0.7),
+                                        #iou_threshold=0.5,  # Set IoU threshold to 0.5 for all metrics
+                                        compute_average_precision=True,
+                                        compute_average_recall=True,
+                                        compute_f1=True                          
                                         )
 
 # Use the appropriate data format (YOLO or COCO)
@@ -54,4 +62,4 @@ if __name__ == '__main__':
                          num_classes=len(dataset_params['classes']),
                          checkpoint_path="C:/Users/User/CAM-R/checkpoints/yolo_nas_s/RUN_20240902_210546_747020/ckpt_best.pth")
     results_2 = trainer.test(model=model_2, test_loader=data, test_metrics_list = metrics)
-    print("Results for second set of weights:", results_2)
+    print("Results for second set of weights:", results_2) """
