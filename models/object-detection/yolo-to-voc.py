@@ -48,6 +48,7 @@ def create_voc_xml(image_path, yolo_annotations, voc_save_path, class_names, img
 
         # Create object element
         obj = ET.SubElement(annotation, "object")
+        print(label)
         ET.SubElement(obj, "name").text = class_names[int(label)]
         ET.SubElement(obj, "pose").text = "Unspecified"
         ET.SubElement(obj, "truncated").text = "0"
@@ -64,7 +65,7 @@ def create_voc_xml(image_path, yolo_annotations, voc_save_path, class_names, img
     xml_filename = os.path.join(voc_save_path, img_name.replace('.jpg', '.xml'))
     tree.write(xml_filename)
 
-def labels_to_xml(images_dir, yolo_annot_dir, voc_annot_dir):
+def labels_to_xml(images_dir, yolo_annot_dir, voc_annot_dir, class_names):
     for txt_file in os.listdir(yolo_annot_dir):
         if txt_file.endswith('.txt'):
             # Read YOLO annotations
@@ -95,22 +96,24 @@ def transfer_imgs(src_folder, dest_folder, extensions=['.jpg', '.jpeg', '.png'])
             print(f"Copied: {file_name}")
 
 # Example usage
-yolo_dir = "./yolo_data"
-voc_dir = "./voc_data"
-os.makedirs(voc_dir, exist_ok=True)
-folders = os.listdir(yolo_dir)
-print(folders)
-class_names = ["bus", "truck", "motorcycle",  "car"]  # Replace with your class names
-for folder in folders:
-    if folder == 'test' or folder == 'train' or folder =='valid':
-        print("yes", folder)
-        voc_pth = voc_dir + "/" + folder
-        os.makedirs(voc_pth, exist_ok=True)
-        print("test", voc_pth)
-        #save all the images to voc
-        transfer_imgs(yolo_dir + "/" + folder + "/images", voc_pth)
-        labels_to_xml(voc_pth, yolo_dir + "/" + folder + "/labels", voc_pth)
-    else:
-        print("no", folder)
-
-
+if __name__ == '__main__':
+    yolo_dir = "./yolo_data"
+    voc_dir = "./voc_data"
+    os.makedirs(voc_dir, exist_ok=True)
+    folders = os.listdir(yolo_dir)
+    print(folders)
+    class_names = ["bus", "truck", "motorcycle", "car"]  # Replace with your class names
+    for folder in folders:
+        if folder == 'test' or folder == 'train' or folder =='valid' or folder == 'test-coco-certified':
+            print("yes", folder)
+            voc_pth = voc_dir + "/" + folder
+            os.makedirs(voc_pth, exist_ok=True)
+            print("test", voc_pth)
+            #save all the images to voc
+            transfer_imgs(yolo_dir + "/" + folder + "/images", voc_pth)
+            if folder == 'test-coco-certified':
+                labels_to_xml(voc_pth, yolo_dir + "/" + folder + "/labels", voc_pth, ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck'])
+            else:
+                labels_to_xml(voc_pth, yolo_dir + "/" + folder + "/labels", voc_pth, class_names)
+        else:
+            print("no", folder)

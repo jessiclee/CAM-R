@@ -107,4 +107,4 @@ def train_test_split(path,neg_path=None, split = 0.15):
 
 ### Change path directory to local data
 remove_dupes('C:/Users/User/CAM-R/models/object-detection/training')
-train_test_split('C:/Users/User/CAM-R/models/object-detection/training/') 
+train_test_split('C:/Users/User/CAM-R/models/object-detection/training') 

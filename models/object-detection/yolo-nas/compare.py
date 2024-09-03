@@ -13,7 +13,7 @@ trainer = Trainer(experiment_name="yolonas_evaluation_comparison")
 
 # Define dataset parameters
 dataset_params = {
-    "data_dir": 'C:/Users/kwekz/fyp/CAM-R/models/object-detection/yolo_data',
+    "data_dir": 'C:/Users/User/CAM-R/models/object-detection/yolo_data',
     "images_dir": 'test/images',  # Directory containing validation images
     "labels_dir": 'test/labels',  # Directory containing YOLO format labels
     "classes": ['Bus', 'Truck', 'Motorcycle', 'Car'],  # List of class names
@@ -44,14 +44,14 @@ data =  coco_detection_yolo_format_val(
 )
 
 if __name__ == '__main__':
-    # Load and evaluate the first set of weights
-    model_1 = models.get('yolo_nas_l', pretrained_weights="coco")
-    results_1 = trainer.test(model=model_1, test_loader=data, test_metrics_list = metrics)
-    print("Results for first set of weights:", results_1)
+    # # Load and evaluate the first set of weights
+    # model_1 = models.get('yolo_nas_l', pretrained_weights="coco")
+    # results_1 = trainer.test(model=model_1, test_loader=data, test_metrics_list = metrics)
+    # print("Results for first set of weights:", results_1)
 
     # Load and evaluate the second set of weights
-    model_2 = models.get('yolo_nas_l', 
+    model_2 = models.get('yolo_nas_s', 
                          num_classes=len(dataset_params['classes']),
-                         checkpoint_path="C:/Users/kwekz/fyp/CAM-R/checkpoints/yolo_nas_l/RUN_20240827_234359_321060/ckpt_best.pth")
+                         checkpoint_path="C:/Users/User/CAM-R/checkpoints/yolo_nas_s/RUN_20240902_210546_747020/ckpt_best.pth")
     results_2 = trainer.test(model=model_2, test_loader=data, test_metrics_list = metrics)
     print("Results for second set of weights:", results_2)
