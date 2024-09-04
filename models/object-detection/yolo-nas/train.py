@@ -1,5 +1,6 @@
 # !pip install super-gradients
 #imports
+import torch 
 from super_gradients.training import Trainer
 from super_gradients.training import dataloaders
 from super_gradients.training.dataloaders.dataloaders import (
@@ -17,30 +18,26 @@ from tqdm.auto import tqdm
 
 
 #load model 
-# DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+print(f"Training on device: {DEVICE}")
 MODEL_ARCH = 'yolo_nas_l'
 #            'yolo_nas_m'
 #            'yolo_nas_s'
 
-model = models.get(MODEL_ARCH, pretrained_weights="coco")
-
 #parameters 
 EPOCHS = 5
 BATCH_SIZE = 32
-WORKERS = 8
-
+WORKERS = 4
 #directories
 CHECKPOINT_DIR = 'checkpoints'
-ROOT_DIR = 'C:/Users/kwekz/fyp/CAM-R/models/object-detection/yolo_data'
+ROOT_DIR = 'C:/Users/User/CAM-R/models/object-detection/yolo_data'
 train_imgs_dir = 'train/images'
 train_labels_dir = 'train/labels'
 val_imgs_dir = 'valid/images'
 val_labels_dir = 'valid/labels'
 test_imgs_dir = 'test/images'
 test_labels_dir = 'test/labels'
-classes = ['Car', 'Motorcycle', 'Bus', 'Truck']
-model_to_train = 'yolo_nas_l'
-
+classes = ['Bus', 'Truck', 'Motorcycle', 'Car']
 dataset_params = {
     'data_dir':ROOT_DIR,
     'train_images_dir':train_imgs_dir,
@@ -75,7 +72,8 @@ val_data = coco_detection_yolo_format_val(
     },
     dataloader_params={
         'batch_size':BATCH_SIZE,
-        'num_workers':WORKERS
+        'num_workers':WORKERS,
+        'pin_memory':True
     }
 )
 
@@ -133,15 +131,15 @@ train_params = {
 #code to train
 if __name__ == "__main__":
     trainer = Trainer(
-        experiment_name=model_to_train, 
+        experiment_name=MODEL_ARCH, 
         ckpt_root_dir=CHECKPOINT_DIR
     )
 
     model = models.get(
-        model_to_train, 
+        MODEL_ARCH, 
         num_classes=len(dataset_params['classes']), 
-        pretrained_weights="coco"
-    )
+        pretrained_weights="coco",
+    ).to(DEVICE)  
 
     trainer.train(
         model=model, 
