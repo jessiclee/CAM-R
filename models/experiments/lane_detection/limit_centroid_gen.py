@@ -14,12 +14,12 @@ logger.setLevel(logging.CRITICAL)
 yolo_nas_l = models.get("yolo_nas_l", pretrained_weights="coco")
 include_labels = ["car", "bus", "truck", "motorcycle"]
 
-ROOT_DIR = "C:/Users/Jess/Desktop/School/FYP/one-day-test-images/testImages"
-# ROOT_DIR = "D:/CAM-R/images/images"
+# ROOT_DIR = "C:/Users/Jess/Desktop/School/FYP/one-day-test-images/testImages"
+ROOT_DIR = "D:/CAM-R/images/images"
 
 os.chdir(ROOT_DIR)
 
-def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step, limit, total_centroid_count, max_centroids):
+def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step, limit, total_centroid_count, max_centroids, image_limit):
     os.chdir(ROOT_DIR + "/" + image_path)
 
     accepted_list = [2, 3, 5, 7]  # Example labels that are accepted
@@ -31,6 +31,11 @@ def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step
     for filename in os.listdir("."):
         if filename.endswith(".jpg") or filename.endswith(".png"):
             image_count += 1
+            
+            if image_count >= image_limit:
+                print("Image limit has been hit")
+                break
+            
             image_path = os.path.join(".", filename)
             image = Image.open(image_path)
             filtered_image = yolo_nas_l.predict(image, conf=0.25)
@@ -112,7 +117,7 @@ def get_first_file(directory):
 
 # List of camera IDs
 camera_ids = [
-    "BUKIT TIMAH EXPRESSWAY/2708"
+    "KALLANG PAYA LEBAR EXPRESSWAY/1005"
 ]
 
 # Initialize a total centroid count and image count
@@ -120,6 +125,7 @@ total_centroid_count = 0
 total_image_count = 0
 max_centroids = 5000  # The target number of centroids, set to -1 to have no limit
 limit = 600  # Set to -1 to ignore limit per grid
+image_limit = 2000
 
 for camera_id in camera_ids:
     # Get grid setup
