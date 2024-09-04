@@ -314,10 +314,10 @@ ROOT_DIR = "D:/CAM-R/images/images"
 os.chdir(ROOT_DIR)
 
 pre_image_min = 100
-pre_min_grid = 7
+pre_min_grid = 9
 min_per_grid = 45
 max_per_grid = 200 
-total_image_process = 1500 # hard cap for the algorithm to stop running
+total_image_process = 400 # hard cap for the algorithm to stop running
 
 def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step, total_centroid_count):
     os.chdir(ROOT_DIR + "/" + image_path)
@@ -376,12 +376,13 @@ def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step
                         if (grid_counts[row_idx, col] >= min_per_grid):
                             grid_indexes.remove((row_idx, col))
                             
-                    if (grid_check is True and len(grid_indexes) == 0) or (image_count > 1500):
+                    if (grid_check is True and len(grid_indexes) == 0) or (image_count > total_image_process):
                         break
         except Exception as e:
             print(e)
             print(grid_indexes)
 
+    print(grid_counts)
     return xy_array, total_centroid_count, image_count
 
 def calc_centroids(xy_array):
