@@ -313,11 +313,11 @@ ROOT_DIR = "D:/CAM-R/images/images"
 
 os.chdir(ROOT_DIR)
 
-pre_image_min = 100
-pre_min_grid = 7
-min_per_grid = 45
+pre_image_min = 300
+pre_min_grid = 3
+min_per_grid = 55
 max_per_grid = 200 
-total_image_process = 400 # hard cap for the algorithm to stop running
+total_image_process = 1300 # hard cap for the algorithm to stop running
 
 def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step, total_centroid_count):
     os.chdir(ROOT_DIR + "/" + image_path)
@@ -338,6 +338,11 @@ def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step
                         grid_indexes.append((row_idx, col_idx))
             print(grid_indexes)
             grid_check = True
+            
+        #### CHECK #######
+        if image_count % 100 == 0:
+            print(grid_counts)
+            print(image_count, grid_indexes)
         try:
             image_count += 1
             image_path = os.path.join(".", filename)
@@ -376,13 +381,13 @@ def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step
                         if (grid_counts[row_idx, col] >= min_per_grid):
                             grid_indexes.remove((row_idx, col))
                             
-                        if (grid_check is True and len(grid_indexes) == 0) or (image_count > total_image_process):
+                        if (grid_check is True and len(grid_indexes) == 0) or (image_count >= total_image_process):
                             break
         except Exception as e:
             print(e)
             print(grid_indexes)
             
-        if (grid_check is True and len(grid_indexes) == 0) or (image_count > total_image_process):
+        if (grid_check is True and len(grid_indexes) == 0) or (image_count >= total_image_process):
                 break
 
     print(grid_counts)
@@ -457,6 +462,6 @@ for camera_id in camera_ids:
 
     # Calculate centroids and save CSV
     centroids_arr, centroids_and_box = calc_centroids(xy_array)
-    save_csv(camera_id.split("/")[1], "C:/Users/Jess/Desktop/School/FYP/CAM-R/models/experiments/lane_detection/centroids/", centroids_and_box)
+    save_csv(camera_id.split("/")[1], "C:/Users/Jess/Desktop/School/FYP/CAM-R/models/experiments/lane_detection/centroidsuni/", centroids_and_box)
     
     print(f"Done w/ {camera_id}. Total Centroids Collected: {total_centroid_count}. Images Processed: {image_count}")
