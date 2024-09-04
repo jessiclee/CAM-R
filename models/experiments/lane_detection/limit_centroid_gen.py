@@ -30,40 +30,48 @@ def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step
 
     for filename in os.listdir("."):
         if filename.endswith(".jpg") or filename.endswith(".png"):
-            image_count += 1
-            
-            if image_count >= image_limit:
-                print("Image limit has been hit")
-                break
-            
-            image_path = os.path.join(".", filename)
-            image = Image.open(image_path)
-            filtered_image = yolo_nas_l.predict(image, conf=0.25)
-            pred = filtered_image.prediction
-            labels = pred.labels.astype(int)
+            try:
+                image_count += 1
+                
+                if image_count >= image_limit:
+                    print("Image limit has been hit")
+                    break
+                
+                #### CHECK #######
+                if image_count % 200 == 0:
+                    print(grid_counts)
+                    print(image_count)
+                
+                image_path = os.path.join(".", filename)
+                image = Image.open(image_path)
+                filtered_image = yolo_nas_l.predict(image, conf=0.25)
+                pred = filtered_image.prediction
+                labels = pred.labels.astype(int)
 
-            for index, label in enumerate(labels):
-                if label in accepted_list:
-                    xmin, ymin, xmax, ymax = pred.bboxes_xyxy[index]
+                for index, label in enumerate(labels):
+                    if label in accepted_list:
+                        xmin, ymin, xmax, ymax = pred.bboxes_xyxy[index]
 
-                    # Calculate centroid
-                    cx = int((xmin + xmax) / 2)
-                    cy = int((ymin + ymax) / 2)
+                        # Calculate centroid
+                        cx = int((xmin + xmax) / 2)
+                        cy = int((ymin + ymax) / 2)
 
-                    # Determine grid cell
-                    col = min(max(int(cx // x_step), 0), num_cols - 1)
-                    row_idx = min(max(int(cy // y_step), 0), num_rows - 1)
+                        # Determine grid cell
+                        col = min(max(int(cx // x_step), 0), num_cols - 1)
+                        row_idx = min(max(int(cy // y_step), 0), num_rows - 1)
 
-                    if limit == -1 or grid_counts[row_idx, col] < limit:
-                        grid_counts[row_idx, col] += 1
-                        total_centroid_count += 1
+                        if limit == -1 or grid_counts[row_idx, col] < limit:
+                            grid_counts[row_idx, col] += 1
+                            total_centroid_count += 1
 
-                        # Add the centroid and bounding box to the array
-                        xy_array.append([cx, cy, xmin, ymin, xmax, ymax])
+                            # Add the centroid and bounding box to the array
+                            xy_array.append([cx, cy, xmin, ymin, xmax, ymax])
 
-                        # Stop if 5000 centroids are collected and max_centroids is not -1
-                        if max_centroids != -1 and total_centroid_count >= max_centroids:
-                            return xy_array, total_centroid_count, image_count
+                            # Stop if 5000 centroids are collected and max_centroids is not -1
+                            if max_centroids != -1 and total_centroid_count >= max_centroids:
+                                return xy_array, total_centroid_count, image_count
+            except Exception as e:
+                print(e)
 
     return xy_array, total_centroid_count, image_count
 
@@ -117,7 +125,7 @@ def get_first_file(directory):
 
 # List of camera IDs
 camera_ids = [
-    "KALLANG PAYA LEBAR EXPRESSWAY/1005"
+    "KALLANG PAYA LEBAR EXPRESSWAY/1004"
 ]
 
 # Initialize a total centroid count and image count
@@ -132,7 +140,7 @@ for camera_id in camera_ids:
     grid_counts, num_rows, num_cols, x_step, y_step = grid_counting(camera_id)
 
     # Apply YOLO-NAS and get centroids
-    xy_array, total_centroid_count, image_count = apply_yolo_nas_l(camera_id, grid_counts, num_rows, num_cols, x_step, y_step, limit, total_centroid_count, max_centroids)
+    xy_array, total_centroid_count, image_count = apply_yolo_nas_l(camera_id, grid_counts, num_rows, num_cols, x_step, y_step, limit, total_centroid_count, max_centroids, image_limit)
 
     # Update total image count
     total_image_count += image_count
