@@ -16,10 +16,22 @@ include_labels = ["car", "bus", "truck", "motorcycle"]
 
 # ROOT_DIR = "C:/Users/Jess/Desktop/School/FYP/one-day-test-images/testImages"
 ROOT_DIR = "D:/CAM-R/images/images"
+PERCENTAGE_INCREMENT = 200
+max_centroids = 5500
+BASE_PERCENTAGE = 50
+MINIMUM_USEFUL_GRID = 3
+limit = 600  # Set to -1 to ignore limit per grid
+image_limit = 4000
+
+# Initialize a total centroid count and image count
+total_centroid_count = 0
+total_image_count = 0
 
 os.chdir(ROOT_DIR)
 
-def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step, limit, total_centroid_count, max_centroids, image_limit):
+
+def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step):
+    global max_centroids
     os.chdir(ROOT_DIR + "/" + image_path)
 
     accepted_list = [2, 3, 5, 7]  # Example labels that are accepted
@@ -27,6 +39,7 @@ def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step
 
     # Initialize image counter
     image_count = 0
+    total_centroid_count = 0
 
     for filename in os.listdir("."):
         if filename.endswith(".jpg") or filename.endswith(".png"):
@@ -41,6 +54,10 @@ def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step
                 # if image_count % 200 == 0:
                 #     print(grid_counts)
                 #     print(image_count)
+                
+                # Check if we've processed 200 images
+                if image_count == 200:
+                    max_centroids = update_max_centroids(grid_counts, num_rows, num_cols)
                 
                 image_path = os.path.join(".", filename)
                 image = Image.open(image_path)
@@ -123,38 +140,48 @@ def get_first_file(directory):
     
     return file_path
 
+def update_max_centroids(grid_counts, num_rows, num_cols):
+    global max_centroids
+    
+    # Initialize a list to store grids with more than 'threshold' centroids
+    grids_over_threshold_centroids = []
+
+    # Count how many grids have more than 'threshold' centroids
+    grids_with_over_threshold_centroids = 0
+    total_grids = num_rows * num_cols
+
+    # Check grid counts and store grids that meet the condition
+    for r in range(num_rows):
+        for c in range(num_cols):
+            count = grid_counts[r, c]
+            if count > MINIMUM_USEFUL_GRID:
+                grids_over_threshold_centroids.append((r, c, count))
+                grids_with_over_threshold_centroids += 1
+
+    # Calculate percentage of grids that meet the criteria
+    percentage = int((grids_with_over_threshold_centroids / total_grids) * 100)
+    
+    if percentage > BASE_PERCENTAGE:
+        max_centroids = max_centroids + ((percentage - BASE_PERCENTAGE) * PERCENTAGE_INCREMENT)
+    
+    print(f'Target amount of centroids calculated: {max_centroids}')
+    return max_centroids
+
 # List of camera IDs
 camera_ids = [
-    "EAST COAST PARKWAY/1001",
-    "EAST COAST PARKWAY/1113",
-    "EAST COAST PARKWAY/3702",
-    "EAST COAST PARKWAY/3705",
-    "EAST COAST PARKWAY/3793",
-    "EAST COAST PARKWAY/3795",
-    "EAST COAST PARKWAY/3796",
-    "EAST COAST PARKWAY/3797",
-    "EAST COAST PARKWAY/3798",
-    "KALLANG PAYA LEBAR EXPRESSWAY/1004",
-    "KALLANG PAYA LEBAR EXPRESSWAY/1005",
-    "KALLANG PAYA LEBAR EXPRESSWAY/1006",
-    "KALLANG PAYA LEBAR EXPRESSWAY/1504",
-    "KALLANG PAYA LEBAR EXPRESSWAY/3704",
-    "KALLANG PAYA LEBAR EXPRESSWAY/5798"
+    "SELETAR EXPRESSWAY/9702",
+    "SELETAR EXPRESSWAY/9703",
+    "SELETAR EXPRESSWAY/9704",
+    "SELETAR EXPRESSWAY/9705",
+    "SELETAR EXPRESSWAY/9706",
 ]
-
-# Initialize a total centroid count and image count
-total_centroid_count = 0
-total_image_count = 0
-max_centroids = 5500  # The target number of centroids, set to -1 to have no limit
-limit = 600  # Set to -1 to ignore limit per grid
-image_limit = 2000
 
 for camera_id in camera_ids:
     # Get grid setup
     grid_counts, num_rows, num_cols, x_step, y_step = grid_counting(camera_id)
 
     # Apply YOLO-NAS and get centroids
-    xy_array, total_centroid_count, image_count = apply_yolo_nas_l(camera_id, grid_counts, num_rows, num_cols, x_step, y_step, limit, total_centroid_count, max_centroids, image_limit)
+    xy_array, total_centroid_count, image_count = apply_yolo_nas_l(camera_id, grid_counts, num_rows, num_cols, x_step, y_step)
 
     # Update total image count
     total_image_count += image_count
@@ -169,10 +196,8 @@ for camera_id in camera_ids:
     if max_centroids != -1 and total_centroid_count >= max_centroids:
         print(f"Target of {max_centroids} centroids reached after processing {image_count} images.")
     
-    total_centroid_count = 0
-    # total_image_count = 0
 
 if max_centroids == -1:
     print(f"No centroid limit applied. {total_centroid_count} centroids were collected across {total_image_count} images.")
 
-print(f"{image_count} images were processed altogether.")
+print(f"{total_image_count} images were processed altogether.")
