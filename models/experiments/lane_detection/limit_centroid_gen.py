@@ -37,10 +37,10 @@ def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step
                     print("Image limit has been hit")
                     break
                 
-                #### CHECK #######
-                if image_count % 200 == 0:
-                    print(grid_counts)
-                    print(image_count)
+                # #### CHECK #######
+                # if image_count % 200 == 0:
+                #     print(grid_counts)
+                #     print(image_count)
                 
                 image_path = os.path.join(".", filename)
                 image = Image.open(image_path)
@@ -72,7 +72,7 @@ def apply_yolo_nas_l(image_path, grid_counts, num_rows, num_cols, x_step, y_step
                                 return xy_array, total_centroid_count, image_count
             except Exception as e:
                 print(e)
-
+    print(grid_counts)
     return xy_array, total_centroid_count, image_count
 
 def calc_centroids(xy_array):
@@ -125,13 +125,27 @@ def get_first_file(directory):
 
 # List of camera IDs
 camera_ids = [
-    "KALLANG PAYA LEBAR EXPRESSWAY/1004"
+    "EAST COAST PARKWAY/1001",
+    "EAST COAST PARKWAY/1113",
+    "EAST COAST PARKWAY/3702",
+    "EAST COAST PARKWAY/3705",
+    "EAST COAST PARKWAY/3793",
+    "EAST COAST PARKWAY/3795",
+    "EAST COAST PARKWAY/3796",
+    "EAST COAST PARKWAY/3797",
+    "EAST COAST PARKWAY/3798",
+    "KALLANG PAYA LEBAR EXPRESSWAY/1004",
+    "KALLANG PAYA LEBAR EXPRESSWAY/1005",
+    "KALLANG PAYA LEBAR EXPRESSWAY/1006",
+    "KALLANG PAYA LEBAR EXPRESSWAY/1504",
+    "KALLANG PAYA LEBAR EXPRESSWAY/3704",
+    "KALLANG PAYA LEBAR EXPRESSWAY/5798"
 ]
 
 # Initialize a total centroid count and image count
 total_centroid_count = 0
 total_image_count = 0
-max_centroids = 5000  # The target number of centroids, set to -1 to have no limit
+max_centroids = 5500  # The target number of centroids, set to -1 to have no limit
 limit = 600  # Set to -1 to ignore limit per grid
 image_limit = 2000
 
@@ -153,8 +167,12 @@ for camera_id in camera_ids:
 
     # Stop if 5000 centroids are collected and max_centroids is not -1
     if max_centroids != -1 and total_centroid_count >= max_centroids:
-        print(f"Target of {max_centroids} centroids reached after processing {total_image_count} images.")
-        break
+        print(f"Target of {max_centroids} centroids reached after processing {image_count} images.")
+    
+    total_centroid_count = 0
+    # total_image_count = 0
 
 if max_centroids == -1:
     print(f"No centroid limit applied. {total_centroid_count} centroids were collected across {total_image_count} images.")
+
+print(f"{image_count} images were processed altogether.")
