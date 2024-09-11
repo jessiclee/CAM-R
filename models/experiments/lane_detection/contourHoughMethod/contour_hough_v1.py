@@ -12,25 +12,21 @@ This method utilises the centroids plot to draw Hough lines over the dense areas
 """
 
 import pandas as pd
-from PIL import Image, ImageDraw
 import os
 import numpy as np
-from IPython.display import Image
-from google.colab import drive
 import cv2
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from sklearn.neighbors import NearestNeighbors
 
-drive.mount('/content/gdrive')
 
 ##########################################MAIN PIPELINE################################################
 
 def pipeline(roadNum, is_hd):
   roadNum = str(roadNum)
-
+  main_folder_dir = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/"
   # get the centroid csv of the road
-  df = pd.read_csv('/content/gdrive/MyDrive/newtraffic/'+ roadNum +'.csv')
+  df = pd.read_csv(main_folder_dir + roadNum +'.csv')
   x = df['cen_x']
   y = df['cen_y']
   data =  np.array(list(zip(df['cen_x'], df['cen_y'])))
@@ -201,7 +197,8 @@ def pipeline(roadNum, is_hd):
   _, binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
   contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-  road = cv2.imread('/content/gdrive/MyDrive/newtraffic/images/' + roadNum + '.jpg')
+#########################CHANGE DIR############################################
+  road = cv2.imread(main_folder_dir + 'images/' + roadNum + '.jpg')
 
   min_area = 3000
 
@@ -216,15 +213,15 @@ def pipeline(roadNum, is_hd):
           # Optionally, draw the rotated rectangle
           rect = cv2.minAreaRect(contour)
           box = cv2.boxPoints(rect)
-          box = np.int0(box)
+          box = box.astype(np.int32)
           cv2.polylines(road, [box], isClosed=True, color=(255, 0, 0), thickness=2)
 
-  # save to gdrive
+  #########################CHANGE DIR############################################
   if is_hd == False:
-    cv2.imwrite("/content/gdrive/MyDrive/newtraffic/v1.3result/low_road/" + roadNum + ".jpg", road)
+    cv2.imwrite( main_folder_dir + "result/low_road/" + roadNum + ".jpg", road)
   else:
-    cv2.imwrite("/content/gdrive/MyDrive/newtraffic/v1.3result/" + roadNum + ".jpg", road)
-  print("saved " + roadNum + " results to drive!")
+    cv2.imwrite( main_folder_dir + "result/" + roadNum + ".jpg", road)
+  print("saved " + roadNum + " results to folder!")
 
 roads = [4701, 4705, 4706, 4707, 4708, 4709, 4710, 4712, 4714, 4716, 4799,
        2703, 2704, 2705, 2706, 2707, 2708, 1701, 1702, 1704, 1705, 1706,
@@ -239,53 +236,3 @@ for i in roads:
 
 for i in low_roads:
   pipeline(i, False)
-
-print(len(roads))
-
-"""# Unused functions"""
-
-def calculate_angle(x1, y1, x2, y2):
-    return np.arctan2(y2 - y1, x2 - x1)
-
-def calculate_distance_between_lines(A1, B1, C1, A2, B2, C2):
-    # Distance between two lines Ax + By + C = 0
-    return abs(C1 - C2) / np.sqrt(A1**2 + B1**2)
-
-def filter_lines(lines, θ_threshold=1, d_threshold=20):
-    filtered_lines = []
-
-    for line in lines:
-        x1, y1, x2, y2 = line[0]
-        angle = calculate_angle(x1, y1, x2, y2)
-
-        # Convert the line to the form Ax + By + C = 0
-        A = y2 - y1
-        B = x1 - x2
-        C = x2 * y1 - x1 * y2
-
-        keep_line = True
-
-        for f_line in filtered_lines:
-            fx1, fy1, fx2, fy2 = f_line[0]
-            f_angle = calculate_angle(fx1, fy1, fx2, fy2)
-
-            # Check if the angle difference is below the threshold
-            angle_diff = abs(angle - f_angle)
-            if angle_diff < θ_threshold:
-                # Convert the filtered line to the form Ax + By + C = 0
-                fA = fy2 - fy1
-                fB = fx1 - fx2
-                fC = fx2 * fy1 - fx1 * fy2
-
-                # Calculate the distance between the two lines
-                distance = calculate_distance_between_lines(A, B, C, fA, fB, fC)
-
-                if distance < d_threshold:
-                    # The lines are too close and have similar angles, discard the current line
-                    keep_line = False
-                    break
-
-        if keep_line:
-            filtered_lines.append(line)
-
-    return filtered_lines
