@@ -21,6 +21,14 @@ from sklearn.neighbors import NearestNeighbors
 
 
 ##########################################MAIN PIPELINE################################################
+def save_polygons_to_file(polygons, file_path):
+    with open(file_path, 'w') as file:
+        for poly in polygons:
+            # Convert each polygon to a string with floating-point numbers
+            poly_str = ' '.join(f"{x:.6f},{y:.6f}" for (x, y) in poly.squeeze())
+            # Write the polygon to the file
+            file.write(poly_str + '\n')
+
 
 def pipeline(roadNum, is_hd):
   roadNum = str(roadNum)
@@ -205,6 +213,7 @@ def pipeline(roadNum, is_hd):
   if is_hd == False:
     min_area = 200
 
+  polygon_points = []
   for contour in contours:
       # Compute the area of the contour
       area = cv2.contourArea(contour)
@@ -213,8 +222,11 @@ def pipeline(roadNum, is_hd):
           # Optionally, draw the rotated rectangle
           rect = cv2.minAreaRect(contour)
           box = cv2.boxPoints(rect)
+          polygon_points.append(box)
           box = box.astype(np.int32)
           cv2.polylines(road, [box], isClosed=True, color=(255, 0, 0), thickness=2)
+  # Save to file
+  save_polygons_to_file(polygon_points,  main_folder_dir + "result/autopolygons/" + roadNum + '.txt')
 
   #########################CHANGE DIR############################################
   if is_hd == False:

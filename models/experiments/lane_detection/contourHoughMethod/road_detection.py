@@ -77,6 +77,30 @@ def create_overlap_mask(scaled_boxes, width, height, overlap_threshold):
     
     return final_mask
 
+def find_dominant_roads(final_mask, width, height):
+
+    # find contours 
+    contours, _ = cv2.findContours(final_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    print(len(contours))
+    # create blank canvas for dominant mask
+    dominant_mask = np.zeros((height, width, 3), dtype=np.uint8)
+
+    min_area = 50000
+    if width < 500:
+        min_area = 500
+
+    for contour in contours:
+        # Compute the area of the contour
+        area = cv2.contourArea(contour)
+        print(area)
+        # Check if the area is greater than the minimum threshold
+        if area > min_area:
+            # draw contour on the new canvas
+            cv2.drawContours(dominant_mask, [contour], -1, (255, 255, 255), thickness=cv2.FILLED)
+            print("contour drawn")
+    return dominant_mask
+
 def process_files(csv_folder_path, scales, overlap_thresholds):
     # List all CSV files in the folder
     csv_files = [f for f in os.listdir(csv_folder_path) if f.endswith('.csv')]
@@ -96,24 +120,26 @@ def process_files(csv_folder_path, scales, overlap_thresholds):
                 # Create the overlap mask based on predefined width and height
                 mask = create_overlap_mask(scaled_boxes, width, height, overlap_threshold)
                 
+                # Apply dominant masking
+                mask = find_dominant_roads(mask, width, height)
                 # Create the output directory if it doesn't exist
-                output_dir = f'overlapping_masksv2/{scale}-scale/'
+                output_dir = f'C:/Users/Zhiyi/Desktop/FYP/newtraffic/road_detection/{scale}-scale/'
                 os.makedirs(output_dir, exist_ok=True)
                 
                 # Define the output file path
                 output_file = os.path.join(output_dir, f'{overlap_threshold}-thres_{os.path.splitext(csv_file)[0]}.jpg')
                 
                 # Save the mask
-                cv2.imwrite(output_file, mask * 255)
+                cv2.imwrite(output_file, mask)
                 print(f"Saved mask to {output_file}")
 
 # Example usage
-csv_folder_path = 'centroidsv2/'  # Folder containing your CSV files
+csv_folder_path = 'C:/Users/Zhiyi/Desktop/FYP/CAM-R/models/experiments/lane_detection/centroidsv2/'  # Folder containing your CSV files
 
 # Array of scales and overlap thresholds to test
 # # scales = [0.3, 0.35, 0.4, 0.45, 0.5]  # Array of scales to test
-scales = [0.35, 0.4]
+scales = [0.5]
 
-overlap_thresholds = [8, 9, 10]
+overlap_thresholds = [2]
 
 process_files(csv_folder_path, scales, overlap_thresholds)
