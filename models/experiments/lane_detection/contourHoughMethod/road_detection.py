@@ -88,17 +88,15 @@ def find_dominant_roads(final_mask, width, height):
 
     min_area = 50000
     if width < 500:
-        min_area = 500
+        min_area = 100
 
     for contour in contours:
         # Compute the area of the contour
         area = cv2.contourArea(contour)
-        print(area)
         # Check if the area is greater than the minimum threshold
         if area > min_area:
             # draw contour on the new canvas
             cv2.drawContours(dominant_mask, [contour], -1, (255, 255, 255), thickness=cv2.FILLED)
-            print("contour drawn")
     return dominant_mask
 
 def process_files(csv_folder_path, scales, overlap_thresholds):
@@ -123,11 +121,11 @@ def process_files(csv_folder_path, scales, overlap_thresholds):
                 # Apply dominant masking
                 mask = find_dominant_roads(mask, width, height)
                 # Create the output directory if it doesn't exist
-                output_dir = f'C:/Users/Zhiyi/Desktop/FYP/newtraffic/road_detection/{scale}-scale/'
+                output_dir = f'C:/Users/Zhiyi/Desktop/FYP/newtraffic/road_detection/'
                 os.makedirs(output_dir, exist_ok=True)
                 
                 # Define the output file path
-                output_file = os.path.join(output_dir, f'{overlap_threshold}-thres_{os.path.splitext(csv_file)[0]}.jpg')
+                output_file = os.path.join(output_dir, f'{os.path.splitext(csv_file)[0]}.jpg')
                 
                 # Save the mask
                 cv2.imwrite(output_file, mask)

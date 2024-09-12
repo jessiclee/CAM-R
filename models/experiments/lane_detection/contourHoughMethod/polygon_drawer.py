@@ -8,7 +8,7 @@ from tkinter import messagebox
 def show_popup(message):
     root = tk.Tk()
     root.withdraw()  # Hide the main window
-    messagebox.showinfo("Information", message)
+    messagebox.showinfo("Mode", message)
     root.destroy()
 
 # Function to get screen size
@@ -156,7 +156,7 @@ for poly in polygons:
     cv2.polylines(final_img, [poly], isClosed=True, color=(255, 0, 0), thickness=2)
 
 # Show final image
-cv2.imshow("image", final_img)
+cv2.imshow("Polygon Drawer", final_img)
 cv2.waitKey(0)
 
 # Save the image with polygons
