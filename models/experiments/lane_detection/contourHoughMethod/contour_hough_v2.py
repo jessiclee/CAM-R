@@ -67,17 +67,17 @@ def pipeline(roadNum, is_hd):
   y = df['ymax'].values
   data = np.array(list(zip(x, y)))
 
-  # if the centroid is not within the contours of the dominant road mask, then remove centroid from data
-  # Filter coordinates
-  data = [coord for coord in data if is_point_in_contours(coord, contours)]
+  # # if the centroid is not within the contours of the dominant road mask, then remove centroid from data
+  # # Filter coordinates
+  # data = [coord for coord in data if is_point_in_contours(coord, contours)]
 
   # creating a black binary image with image dimensions (in our case, the HD is 1920 x 1080, while the low quality images are 320 x 240)
   image_width = 2000
   image_height = 2000
 
   if is_hd == False:
-    image_width = 320
-    image_height = 240
+    image_width = 350
+    image_height = 250
 
   binary_img = np.zeros((image_height, image_width), dtype=np.uint8)  # Define height and width of your image
 
@@ -242,7 +242,7 @@ def pipeline(roadNum, is_hd):
 #########################CHANGE DIR############################################
   road = cv2.imread(main_folder_dir + 'images/' + roadNum + '.jpg')
 
-  min_area = 4000
+  min_area = 3000
 
   if is_hd == False:
     min_area = 200

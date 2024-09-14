@@ -4,6 +4,15 @@ import os
 import tkinter as tk
 from tkinter import messagebox
 
+# Function for saving polygons to file
+def save_polygons_to_file(polygons, file_path):
+    with open(file_path, 'w') as file:
+        for poly in polygons:
+            # Convert each polygon to a string with floating-point numbers
+            poly_str = ' '.join(f"{x:.6f},{y:.6f}" for (x, y) in poly.squeeze())
+            # Write the polygon to the file
+            file.write(poly_str + '\n')
+
 # Function to show a message popup
 def show_popup(message):
     root = tk.Tk()
@@ -14,13 +23,14 @@ def show_popup(message):
 # Function to get screen size
 def get_screen_size():
     root = tk.Tk()
+    root.withdraw() 
     width = root.winfo_screenwidth()
     height = root.winfo_screenheight()
     root.destroy()
     return (width, height)
 
 # ***** replace with required image path *****
-roadNum = str(1707)
+roadNum = input("Enter road ID: ")
 main_folder_dir = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/"
 # path = main_folder_dir + "result/" + roadNum + ".jpg"
 path = main_folder_dir + "images/" + roadNum + ".jpg"
@@ -41,6 +51,11 @@ drawing_mode = True     # True when drawing a new polygon
 
 def load_polygons_from_file(file_path):
     polygons = []
+    # Check if the file exists
+    if not os.path.exists(file_path):
+        # If the file doesn't exist, simply return an empty list or handle it as needed
+        return polygons
+
     with open(file_path, 'r') as file:
         for line in file:
             # Convert each line to a list of tuples, handling floating-point numbers
@@ -50,7 +65,7 @@ def load_polygons_from_file(file_path):
     return polygons
 
 # Load from file
-polygons = load_polygons_from_file(main_folder_dir + "result/autopolygons/" + roadNum + '.txt');
+polygons = load_polygons_from_file(main_folder_dir + "v2result/autopolygons/" + roadNum + '.txt');
 
 def on_mouse(event, x, y, buttons, user_param):
     global done, points, current, temp, polygons, polygon_selected, delete_mode, drawing_mode
@@ -96,7 +111,7 @@ def on_mouse(event, x, y, buttons, user_param):
             else:
                 print("Need at least 3 points to complete a polygon")
 
-cv2.namedWindow("image")
+cv2.namedWindow("image", cv2.WINDOW_NORMAL)
 
 # Get screen size and resize the window to fit the screen
 screen_width, screen_height = get_screen_size()
@@ -160,7 +175,7 @@ cv2.imshow("Polygon Drawer", final_img)
 cv2.waitKey(0)
 
 # Save the image with polygons
-cv2.imwrite(main_folder_dir + "result/manual/mask-" + os.path.basename(path), final_img)
-
+cv2.imwrite(main_folder_dir + "v2result/manual/mask-" + os.path.basename(path), final_img)
+save_polygons_to_file(polygons,  main_folder_dir + "v2result/manual/polygons/" + roadNum + '.txt')
 cv2.destroyAllWindows()
 
