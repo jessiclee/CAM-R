@@ -193,11 +193,11 @@ def process_files(csv_folder_path, output_dir, scale, overlap_threshold):
         
         # Set the minimum area threshold based on camera dimensions
         if width == 1920 and height == 1080:
-            min_area_threshold = 600  # Example value for large cameras
+            min_area_threshold = 3000  # Example value for large cameras
         elif width == 320 and height == 240:
-            min_area_threshold = 300  # Example value for small cameras
+            min_area_threshold = 100  # Example value for small cameras
         else:
-            min_area_threshold = 400  # Default value for other sizes
+            min_area_threshold = 1000  # Default value for other sizes
         
         scaled_boxes = scale_bounding_boxes(df, scale)
         mask = create_overlap_mask(scaled_boxes, width, height, overlap_threshold)
