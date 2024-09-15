@@ -3,8 +3,8 @@ import shutil
 import fnmatch
 
 # Define the source directory and destination directory
-source_dir = 'D:/CAM-R/images/images/KALLANG PAYA LEBAR EXPRESSWAY/5798'  # Replace with the path to your source directory
-dest_dir = 'C:/Users/Jess/OneDrive - Singapore Management University/FYP/density_images/jess_round1'  # Replace with the path to your destination directory
+source_dir = 'C:/dDrive/CS480-fyp/labelling/18082024'  # Replace with the path to your source directory
+dest_dir = 'C:/dDrive/CS480-fyp/traffic_density/abiya_round1/abiya_round1'  # Replace with the path to your destination directory
 
 # Ensure the destination directory exists
 os.makedirs(dest_dir, exist_ok=True)
