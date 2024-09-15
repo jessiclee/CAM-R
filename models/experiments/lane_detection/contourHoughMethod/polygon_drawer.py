@@ -1,9 +1,45 @@
+"""
+Welcome to Polygon Drawer!
+to draw new polygon: click to add points then click n
+to delete polygon: simply click on the polygon 
+
+keys:
+b - delete mode
+e - exit delete mode
+n - draw new polygon/finish the current polygon
+d - done
+f - finish and close window
+
+Reference Code: https://github.com/sampan-s-nayak/manual_polygon_drawer 
+"""
+
 import cv2
 import numpy as np
 import os
 import tkinter as tk
 from tkinter import messagebox
 
+# ***** replace with required image path *****
+roadNum = input("Enter road ID: ")
+main_folder_dir = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/"
+# path = main_folder_dir + "result/" + roadNum + ".jpg"
+path = main_folder_dir + "images/" + roadNum + ".jpg"
+
+img = cv2.imread(path)
+clone = img.copy()
+temp = img.copy()
+final_img = img.copy()
+
+# ***** global variable declaration *****
+done = False
+points = []
+polygons = []  # List to store all polygons (detected and newly drawn)
+current = (0, 0)
+polygon_selected = -1  # Store the index of the polygon to delete
+delete_mode = False     # Set to True when 'b' key is pressed
+drawing_mode = True     # True when drawing a new polygon
+
+######################################## FUNCTIONS ############################################################
 # Function for saving polygons to file
 def save_polygons_to_file(polygons, file_path):
     with open(file_path, 'w') as file:
@@ -29,26 +65,6 @@ def get_screen_size():
     root.destroy()
     return (width, height)
 
-# ***** replace with required image path *****
-roadNum = input("Enter road ID: ")
-main_folder_dir = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/"
-# path = main_folder_dir + "result/" + roadNum + ".jpg"
-path = main_folder_dir + "images/" + roadNum + ".jpg"
-
-img = cv2.imread(path)
-clone = img.copy()
-temp = img.copy()
-final_img = img.copy()
-
-# ***** global variable declaration *****
-done = False
-points = []
-polygons = []  # List to store all polygons (detected and newly drawn)
-current = (0, 0)
-polygon_selected = -1  # Store the index of the polygon to delete
-delete_mode = False     # Set to True when 'b' key is pressed
-drawing_mode = True     # True when drawing a new polygon
-
 def load_polygons_from_file(file_path):
     polygons = []
     # Check if the file exists
@@ -63,9 +79,6 @@ def load_polygons_from_file(file_path):
             # Convert the list of tuples to a numpy array and ensure correct data type
             polygons.append(np.array(points, dtype=np.float32))
     return polygons
-
-# Load from file
-polygons = load_polygons_from_file(main_folder_dir + "v2result/autopolygons/" + roadNum + '.txt');
 
 def on_mouse(event, x, y, buttons, user_param):
     global done, points, current, temp, polygons, polygon_selected, delete_mode, drawing_mode
@@ -111,12 +124,12 @@ def on_mouse(event, x, y, buttons, user_param):
             else:
                 print("Need at least 3 points to complete a polygon")
 
-cv2.namedWindow("image", cv2.WINDOW_NORMAL)
+######################################## DRIVER CODE ############################################################
+polygons = load_polygons_from_file(main_folder_dir + "v2result/autopolygons/" + roadNum + '.txt');
 
-# Get screen size and resize the window to fit the screen
+cv2.namedWindow("image", cv2.WINDOW_NORMAL)
 screen_width, screen_height = get_screen_size()
 cv2.resizeWindow("image", screen_width, screen_height)
-
 cv2.setMouseCallback("image", on_mouse)
 
 while True:
