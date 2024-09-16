@@ -20,7 +20,7 @@ class DenseNet201(nn.Module):
 if __name__ == "__main__":
     # Hyperparameters
     num_classes = 3  # Adjust this to match the number of classes (e.g., high, medium, low)
-    num_epochs = 5
+    num_epochs = 12
     batch_size = 32
     learning_rate = 0.001
 

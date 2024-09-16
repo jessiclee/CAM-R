@@ -17,8 +17,7 @@ def train(num_epochs, device, model, criterion, optimizer, train_loader, validat
             
             running_loss += loss.item()
 
-             # Probe: Show a message every 10 batches
-            print("im running")
+            #print("im running")
         
         print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}')
         
@@ -55,3 +54,33 @@ def test(device, model, test_loader):
             correct += (predicted == labels).sum().item()
 
     print(f'Test Accuracy: {100 * correct / total:.2f}%')
+
+def test_model_on_test_data(device, model, test_loader):
+    model.eval()  # Set the model to evaluation mode
+    correct = 0
+    total = 0
+    class_correct = [0 for _ in range(len(test_loader.dataset.classes))]
+    class_total = [0 for _ in range(len(test_loader.dataset.classes))]
+
+    with torch.no_grad():
+        for images, labels in test_loader:
+            images, labels = images.to(device), labels.to(device)
+            outputs = model(images)
+            _, predicted = torch.max(outputs, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+
+            # Track accuracy for each class
+            for i in range(len(labels)):
+                label = labels[i]
+                class_correct[label] += (predicted[i] == label).item()
+                class_total[label] += 1
+
+    # Overall accuracy
+    overall_accuracy = 100 * correct / total
+    print(f'Test Accuracy: {overall_accuracy:.2f}%')
+
+    # Class-wise accuracy
+    for i in range(len(test_loader.dataset.classes)):
+        if class_total[i] > 0:
+            print(f'Accuracy of {test_loader.dataset.classes[i]}: {100 * class_correct[i] / class_total[i]:.2f}%')
