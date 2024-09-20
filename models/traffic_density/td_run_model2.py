@@ -58,7 +58,8 @@ def train(num_epochs, device, model, criterion, optimizer, train_loader, validat
         roc_auc_dict = compute_roc_auc(all_labels, all_probs, num_classes)
 
         accuracy = 100 * correct / total
-        print(f'Validation Accuracy: {accuracy:.2f}%', f'Macro-averaged Precision: {macro_precision:.4f}, Macro-averaged Recall: {macro_recall:.4f}', "ROC AUC scores for each class:", roc_auc_dict )
+        print(f'Validation Accuracy: {accuracy:.2f}%', f'Macro-averaged Precision: {macro_precision:.4f}, Macro-averaged Recall: {macro_recall:.4f}')
+        print("ROC AUC scores for each class:", roc_auc_dict)
 
         # Save the best model
         if accuracy > best_accuracy:
@@ -73,7 +74,7 @@ def compute_roc_auc(labels, probs, num_classes):
     for i in range(num_classes):
         fpr, tpr, _ = roc_curve(binarized_labels[:, i], probs[:, i])
         roc_auc = auc(fpr, tpr)
-        roc_auc_dict[f'Class {i}'] = roc_auc
+        roc_auc_dict[f'Class {i}'] = round(roc_auc, 4)
 
         # # Optionally, plot the ROC curve for each class
         # plt.figure()
@@ -122,18 +123,21 @@ def test(device, model, test_loader, num_classes):
 
     # Compute overall accuracy
     accuracy = 100 * correct / total
-    print(f'Test Accuracy: {accuracy:.2f}%', f'Macro-averaged Precision: {macro_precision:.4f}, Macro-averaged Recall: {macro_recall:.4f}', "ROC AUC scores for each class:", roc_auc_dict )
+    print(f'Test Accuracy: {accuracy:.2f}%', f'Macro-averaged Precision: {macro_precision:.4f}, Macro-averaged Recall: {macro_recall:.4f}')
+    print("ROC AUC scores for each class:", roc_auc_dict )
 
-def test_model_on_test_data(device, model, test_loader, num_classes, class_names):
+def test_model_on_test_data(device, model, test_loader):
     model.eval()  # Set the model to evaluation mode
     correct = 0
     total = 0
+    num_classes = len(test_loader.dataset.classes)
+    class_names = test_loader.dataset.classes  # Extract class names
     class_correct = [0 for _ in range(num_classes)]
     class_total = [0 for _ in range(num_classes)]
     all_labels = []
     all_preds = []
     all_probs = []
-    
+
     with torch.no_grad():
         for images, labels in test_loader:
             images, labels = images.to(device), labels.to(device)
@@ -141,13 +145,13 @@ def test_model_on_test_data(device, model, test_loader, num_classes, class_names
             _, predicted = torch.max(outputs, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-            
+
             # Track accuracy for each class
             for i in range(len(labels)):
                 label = labels[i]
                 class_correct[label] += (predicted[i] == label).item()
                 class_total[label] += 1
-            
+
             # Collecting labels, predictions, and probabilities for ROC and AUC
             all_labels.append(labels.cpu().numpy())
             all_preds.append(predicted.cpu().numpy())
@@ -186,8 +190,4 @@ def test_model_on_test_data(device, model, test_loader, num_classes, class_names
 
     # Print macro-averaged precision and recall
     print(f'\nMacro-averaged Precision: {macro_precision:.4f}, Macro-averaged Recall: {macro_recall:.4f}')
-    print("ROC AUC scores for each class:", roc_auc_dict)
-
-
-
 
