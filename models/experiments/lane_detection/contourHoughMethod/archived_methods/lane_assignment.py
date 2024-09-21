@@ -1,4 +1,5 @@
 """
+UPDATE: THIS DOES NOT WORK
 Through the polygons, get the median line in the contour and then extrapolate the line.
 Given a centroid, get the euclidean distance then assign it to the lane that it is the closest to.
 """
@@ -13,7 +14,6 @@ import tkinter as tk
 from skan import csr
 from scipy.special import binom
 from skimage import img_as_ubyte
-
 
 # GLOBAL VARIABLES
 camera_sizes = {

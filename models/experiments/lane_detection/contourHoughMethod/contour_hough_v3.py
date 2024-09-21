@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Generating lines instead of polygons
+Contour Hough Method Version 3.0
+SUMMARY:
+This method utilises the centroids plot to draw Hough lines over the dense areas.
+Generating lines to mark lanes instead of polygons and extrapolate the line.
+
+DEPENDENCIES: pandas, os, numpy, opencv, matplotlib, sklearn
 """
-
-
+##############################################################################
+###########################  IMPORTS  ########################################
+##############################################################################
 import pandas as pd
 import os
 import numpy as np
@@ -12,8 +18,20 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from sklearn.neighbors import NearestNeighbors
 
+##############################################################################
+########################### VARIABLES ########################################
+##############################################################################
+roads = [4701, 4705, 4706, 4707, 4708, 4709, 4710, 4712, 4714, 4716, 4799,
+       2703, 2704, 2705, 2706, 2707, 2708, 1701, 1702, 1704, 1705, 1706,
+       1707, 1709, 1711,  3702, 3705, 3793, 3795, 3796, 3797, 3704, 8701, 8702, 8704,
+       5794, 5795, 5797, 6701, 6705, 6706, 6708, 6710, 6711, 6712, 6713,
+       6714,  6715, 7797, 7798, 9701, 9702, 9703, 9704, 9705, 9706,
+       1111, 1112, 7791, 7793, 7794, 7795, 7796]
+low_roads = [1001, 1002, 1003, 1501, 1502, 1503, 1505, 1005, 1006, 1504]
 
-##########################################MAIN PIPELINE################################################
+##############################################################################
+########################### FUNCTIONS ########################################
+##############################################################################
 def save_lines_to_file(lines, file_path):
     with open(file_path, 'w') as file:
         for line in lines:
@@ -298,7 +316,6 @@ def pipeline(roadNum, is_hd):
   _, binary = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
   contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-#########################CHANGE DIR############################################
   road = cv2.imread(main_folder_dir + 'images/' + roadNum + '.jpg')
 
   min_area = 3000
@@ -324,23 +341,17 @@ def pipeline(roadNum, is_hd):
             cv2.line(road, (x1, y1), (x2, y2), (0, 0, 255), 2)  # Red line
             line_points.append([(x1, y1), (x2, y2)])
 
-  # Save to file
   save_lines_to_file(line_points,  main_folder_dir + "v3result/autolines/" + roadNum + '.txt')
 
-  #########################CHANGE DIR############################################
   if is_hd == False:
     cv2.imwrite( main_folder_dir + "v3result/low_road/" + roadNum + ".jpg", road)
   else:
     cv2.imwrite( main_folder_dir + "v3result/" + roadNum + ".jpg", road)
   print("saved " + roadNum + " results to folder!")
 
-roads = [4701, 4705, 4706, 4707, 4708, 4709, 4710, 4712, 4714, 4716, 4799,
-       2703, 2704, 2705, 2706, 2707, 2708, 1701, 1702, 1704, 1705, 1706,
-       1707, 1709, 1711,  3702, 3705, 3793, 3795, 3796, 3797, 3704, 8701, 8702, 8704,
-       5794, 5795, 5797, 6701, 6705, 6706, 6708, 6710, 6711, 6712, 6713,
-       6714,  6715, 7797, 7798, 9701, 9702, 9703, 9704, 9705, 9706,
-       1111, 1112, 7791, 7793, 7794, 7795, 7796]
-low_roads = [1001, 1002, 1003, 1501, 1502, 1503, 1505, 1005, 1006, 1504]
+##############################################################################
+###########################DRIVER CODE########################################
+##############################################################################
 
 for i in roads:
   pipeline(i, True)

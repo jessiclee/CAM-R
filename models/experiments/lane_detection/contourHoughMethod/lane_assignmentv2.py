@@ -1,20 +1,23 @@
 """
-Given a centroid, get the perpendicular distance then assign it to the lane that it is the closest to.
+Line Assignment Version 2.0
+
+SUMMARY: Given a centroid, get the perpendicular distance then assign it to the lane that it is the closest to.
+
+DEPENDENCIES: numpy, opencv, os, pandas, tkinter
 """
-# IMPORTS
+
+##############################################################################
+###########################  IMPORTS  ########################################
+##############################################################################
 import cv2
 import numpy as np
 import os
 import pandas as pd
-from skimage import morphology
-from skimage.util import invert
-from skimage import data
 import tkinter as tk
-from skan import csr
-from scipy.special import binom
-from shapely.geometry import Polygon
-import pygeoops
-# GLOBAL VARIABLES
+
+##############################################################################
+########################### VARIABLES ########################################
+##############################################################################
 camera_sizes = {
     "small": {
         "width": 320,
@@ -35,7 +38,9 @@ camera_sizes = {
     }
 }
 
-# FUNCTIONS 
+##############################################################################
+########################### FUNCTIONS ########################################
+##############################################################################
 def get_camera_size(camid):
     camera_id = int(camid)
     
@@ -158,9 +163,6 @@ def line_assignment_by_perpendicular_distance(centroid, lines):
             proj_coord = coord
     return closest_line, proj_coord
 
-def save_line_assignment(lineID, bboxes):
-    pass
-
 # Function to get screen size
 def get_screen_size():
     root = tk.Tk()
@@ -169,6 +171,9 @@ def get_screen_size():
     height = root.winfo_screenheight()
     root.destroy()
     return (width, height)
+
+def save_line_assignment(line, bboxes):
+    pass
 
 ##############################################################################
 ###########################DRIVER CODE########################################
@@ -195,7 +200,6 @@ centroids = get_vehicles_from_csv(centroid_path)
 for centroid in centroids:
     cv2.circle(test_image, centroid, 5, (0, 200, 0), -1)
     centroid_line_assignment, projection = line_assignment_by_perpendicular_distance(centroid, lines)
-    print(projection)
     cv2.circle(test_image, (int(projection[0]), int(projection[1])), 5, (0, 0, 255), -1)
 
 
@@ -205,7 +209,3 @@ cv2.resizeWindow("lines", screen_width, screen_height)
 cv2.imshow("lines", test_image)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
-
-# load the centroids and lines
-
-# calculate the perpendicular distance from a vehicle to each line. Get the closest line and assign the vehicle to that road. 
