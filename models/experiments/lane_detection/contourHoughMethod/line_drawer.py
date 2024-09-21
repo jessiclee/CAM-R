@@ -93,19 +93,27 @@ def get_screen_size():
 
     return (width, height)
 
-def pointLineTest(line, point, threshold=1.0):
-    # Unpack line points
-    (x1, y1), (x2, y2) = line
+def pointLineTest(polyline, point, threshold=4.0):
     px, py = point
+    min_distance = float('inf')  # Start with a large value
     
-    # Calculate distance from point to the line
-    num = abs((y2 - y1) * px - (x2 - x1) * py + x2 * y1 - y2 * x1)
-    den = np.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
+    # Iterate over each pair of consecutive points in the polyline
+    for i in range(len(polyline) - 1):
+        (x1, y1) = polyline[i]
+        (x2, y2) = polyline[i + 1]
+        
+        # Calculate distance from point to the current line segment
+        num = abs((y2 - y1) * px - (x2 - x1) * py + x2 * y1 - y2 * x1)
+        den = np.sqrt((y2 - y1) ** 2 + (x2 - x1) ** 2)
+        
+        distance = num / den if den != 0 else float('inf')
+        
+        # Track the minimum distance found
+        min_distance = min(min_distance, distance)
     
-    distance = num / den if den != 0 else float('inf')
-    
-    # Return True if the point is within the threshold distance
-    return distance <= threshold
+    # Return True if the closest distance is within the threshold
+    return min_distance <= threshold
+
 
 def load_lines_from_file(file_path):
 
@@ -222,7 +230,7 @@ while True:
         break
 
     elif key == ord('n'):  # Press 'n' to start a new polygon
-        if len(points) > 2:
+        if len(points) > 1:
             lines.append(np.array(points))
             points = []
             temp = img.copy()
