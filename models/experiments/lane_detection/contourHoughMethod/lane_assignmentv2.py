@@ -12,9 +12,8 @@ from skimage import data
 import tkinter as tk
 from skan import csr
 from scipy.special import binom
-from skimage import img_as_ubyte
-
-
+from shapely.geometry import Polygon
+import pygeoops
 # GLOBAL VARIABLES
 camera_sizes = {
     "small": {
@@ -96,39 +95,34 @@ def get_screen_size():
     root.destroy()
     return (width, height)
 
-def Bernstein(n, k):
-    """Bernstein polynomial.
-    """
-    coeff = binom(n, k)
 
-    def _bpoly(x):
-        return coeff * x ** k * (1 - x) ** (n - k)
-
-    return _bpoly
-
-def Bezier(points, num=1000):
-    """Build Bézier curve from points with improvements for smoothness and size retention."""
-    N = len(points)  # Number of control points
-    t = np.linspace(0, 1, num=num)  # Parameter t from 0 to 1 for smooth interpolation
-    curve = np.zeros((num, 2))  # Initialize the curve array with shape (num, 2)
-
-    # Compute Bézier curve by summing Bernstein polynomials
-    for ii in range(N):
-        curve += np.outer(Bernstein(N - 1, ii)(t), points[ii])
+def get_centerline(polygon_coords):
+    # Create a Polygon object using shapely
+    polygon = Polygon(polygon_coords)
+    centerline = pygeoops.centerline(polygon)
+    # Convert centerline to a list of coordinates
+    centerline_coords = np.array(centerline.coords).T
+    print(centerline_coords)
+    return centerline_coords
+        
+def draw_centerline_on_image(image, centerline_coords, color=255, thickness=2):
+    # Convert coordinates to integer tuples
+    centerline_coords = np.array(centerline_coords, dtype=np.int32)
     
-    # Ensure the curve fits within the original polygon bounds (retain size)
-    min_points = np.min(points, axis=0)  # Find min x and y from original points
-    max_points = np.max(points, axis=0)  # Find max x and y from original points
-    min_curve = np.min(curve, axis=0)
-    max_curve = np.max(curve, axis=0)
+    # Draw the centerline on the image
+    for i in range(len(centerline_coords) - 1):
+        pt1 = tuple(centerline_coords[i])
+        pt2 = tuple(centerline_coords[i + 1])
+        print(pt1)
+        print(pt2)
+        cv2.line(image, pt1, pt2, color, thickness)
     
-    # Scale the curve back to fit the original polygon size
-    scale = (max_points - min_points) / (max_curve - min_curve)
-    curve = (curve - min_curve) * scale + min_points
-
-    return curve
+    return image
 
 
+##############################################################################
+###########################DRIVER CODE########################################
+##############################################################################
 # input road
 roadNum = input("Enter road ID: ")
 
@@ -148,24 +142,13 @@ res = None
 # get the median line in each polygon.
 ## CURRENT V1
 for poly in polygons:
-    lane_polygon_image = np.zeros((height, width), dtype=np.uint8)
-    # poly = Bezier(poly)
-    poly = poly.reshape((-1, 1, 2)).astype(np.int32)
-    cv2.fillPoly(lane_polygon_image, [poly], color=255)
-    # use scikit-image skeletonize to get the lane lines
-    skeletonized = skeletonize_image(lane_polygon_image)
-    skeleton_coords = np.column_stack(np.where(skeletonized > 0))
-    skeleton_lanes.append(skeleton_coords)
-
-# Plot the skeleton coordinates on the new image
-for skeleton_coords in skeleton_lanes:
-    for coord in skeleton_coords:
-        cv2.circle(lane_lines_image, (coord[1], coord[0]), radius=1, color=255, thickness=-1)
+    line_points = get_centerline(poly)
+    draw_centerline_on_image(lane_lines_image, line_points)
 
 cv2.namedWindow("lines", cv2.WINDOW_NORMAL)
 screen_width, screen_height = get_screen_size()
 cv2.resizeWindow("lines", screen_width, screen_height)
-cv2.imshow("lines", lane_polygon_image)
+cv2.imshow("lines", lane_lines_image)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
