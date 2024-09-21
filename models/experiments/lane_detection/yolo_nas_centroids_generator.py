@@ -21,13 +21,15 @@ logger = logging.getLogger()
 logger.setLevel(logging.CRITICAL)
 
 
-yolo_nas_l = models.get("yolo_nas_l", pretrained_weights="coco")
+# yolo_nas_l = models.get("yolo_nas_l", pretrained_weights="coco")
 # yolo_nas_l = torch.load("C:/Users/Jess/Desktop/School/FYP/cvat/serverless/pytorch/Deci-AI/super-gradients/nuclio/yolo_nas_l.pt")
+yolo_nas_l = models.get('yolo_nas_s', num_classes=4, 
+                         checkpoint_path="C:/Users/Zhiyi/Desktop/FYP/CAM-R/models/experiments/lane_detection/19.pth")
 
 include_labels = ["car", "bus", "truck", "motorcycle"]
 
 # Change directory to the folder containing the images
-ROOT_DIR = "C:/Users/Jess/Desktop/School/FYP/one-day-test-images/testImages"
+ROOT_DIR = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/centroidimages"
 os.chdir(ROOT_DIR)
 
 def apply_yolo_nas_l(image_path):
@@ -35,7 +37,7 @@ def apply_yolo_nas_l(image_path):
   os.chdir(ROOT_DIR + "/" + image_path)
 
   # List of accepted labels
-  accepted_list = [2, 3, 5, 7]  # Example labels that are accepted
+  accepted_list = [ 3,4,6,8]  # Example labels that are accepted
 
   xy_array = []
   # Apply the YOLO-NAS model to each image
@@ -94,17 +96,12 @@ def save_csv(camera_id, file_path, centroids_and_box):
 
 
 camera_ids = [
-              "PAN ISLAND EXPRESSWAY/6710",
-              "PAN ISLAND EXPRESSWAY/6711",
-              "PAN ISLAND EXPRESSWAY/6712",
-              "PAN ISLAND EXPRESSWAY/6713",
-              "PAN ISLAND EXPRESSWAY/6714",
-              "PAN ISLAND EXPRESSWAY/6715"
+              "2703"
               ]
 
 for camera_id in camera_ids:
   xy_array = apply_yolo_nas_l(camera_id)
   centroids_arr, centroids_and_box = calc_centroids(xy_array)
   # save_csv(camera_id, "/content/drive/My Drive/FYP/csv/", centroids_and_box)
-  save_csv(camera_id.split("/")[1], "C:/Users/Jess/Desktop/School/FYP/CAM-R/models/experiments/lane_detection/centroidsv2/", centroids_and_box)
+  save_csv(camera_id, "C:/Users/Zhiyi/Desktop/FYP/newtraffic/centroidimages/", centroids_and_box)
   print("Done w/ " + camera_id)

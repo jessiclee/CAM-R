@@ -1,11 +1,11 @@
 """
-Through the polygons, get the median line in the contour and then extrapolate the line.
-Given a centroid, get the euclidean distance then assign it to the lane that it is the closest to.
+Given a centroid, get the perpendicular distance then assign it to the lane that it is the closest to.
 """
 # IMPORTS
 import cv2
 import numpy as np
 import os
+import pandas as pd
 from skimage import morphology
 from skimage.util import invert
 from skimage import data
@@ -51,37 +51,112 @@ def get_camera_size(camid):
     
     return width, height
 
-def load_polygons_from_file(file_path):
-    polygons = []
+def load_lines_from_file(file_path):
+
+    lines = []
+
     # Check if the file exists
+
     if not os.path.exists(file_path):
-        print("file path does not exist")
+
         # If the file doesn't exist, simply return an empty list or handle it as needed
-        return polygons
+
+        return lines
+
 
     with open(file_path, 'r') as file:
+
         for line in file:
+
             # Convert each line to a list of tuples, handling floating-point numbers
+
             points = [tuple(map(float, pt.split(','))) for pt in line.strip().split()]
+
             # Convert the list of tuples to a numpy array and ensure correct data type
-            polygons.append(np.array(points, dtype=np.float32))
-    return polygons
 
-def save_lines(image, file_path):
-    pass
+            lines.append(np.array(points, dtype=np.float32))
 
-def skeletonize_image(image):
-    skeleton = morphology.skeletonize(image, method='lee')
-    skeleton_uint8 = np.array(skeleton * 255, dtype=np.uint8)
-    return skeleton_uint8
+    return lines
 
+def get_vehicles_from_csv(file_path):
+    # get the centroid csv of the road
+    df = pd.read_csv(file_path)
+    x = df['cen_x'].values
+    y = df['cen_y'].values
+    data = np.array(list(zip(x, y)))
+    return data
 
+def point_to_segment_distance_with_projection(point, segment_start, segment_end):
+    """
+    Calculate the shortest distance from a point to a line segment and return the projection point.
 
-def get_vehicles_from_csv(image):
-    pass
+    Args:
+    - point: A tuple (x0, y0) representing the point.
+    - segment_start: A tuple (x1, y1) representing the start of the line segment.
+    - segment_end: A tuple (x2, y2) representing the end of the line segment.
 
-def line_assignment_by_perpendicular_distance(centroid, lineID):
-    pass
+    Returns:
+    - distance: The shortest distance from the point to the segment.
+    - projection: The coordinates (proj_x, proj_y) of the projection point on the segment.
+    """
+    x0, y0 = point
+    x1, y1 = segment_start
+    x2, y2 = segment_end
+
+    # Vector from segment_start to segment_end
+    dx, dy = x2 - x1, y2 - y1
+    # If the segment is a point, return the distance to that point
+    if dx == 0 and dy == 0:
+        return np.hypot(x0 - x1, y0 - y1), (x1, y1)
+    
+    # Project point onto the line (but not beyond the segment ends)
+    t = ((x0 - x1) * dx + (y0 - y1) * dy) / (dx * dx + dy * dy)
+    t = max(0, min(1, t))  # Clamp t to the segment
+    
+    # Find the projection point on the segment
+    proj_x = x1 + t * dx
+    proj_y = y1 + t * dy
+    
+    # Return the distance from the point to the projection and the projection point
+    distance = np.hypot(x0 - proj_x, y0 - proj_y)
+    return distance, (proj_x, proj_y)
+
+def point_to_polyline_distance_with_projection(point, polyline):
+    """
+    Calculate the shortest distance from a point to a polyline and return the projection point.
+
+    Args:
+    - point: A tuple (x0, y0) representing the point.
+    - polyline: A list of tuples representing the polyline coordinates.
+
+    Returns:
+    - min_distance: The shortest distance from the point to the polyline.
+    - closest_projection: The projection coordinates (proj_x, proj_y) on the polyline.
+    """
+    min_distance = float('inf')
+    closest_projection = None
+    
+    for i in range(len(polyline) - 1):
+        segment_start = polyline[i]
+        segment_end = polyline[i + 1]
+        distance, projection = point_to_segment_distance_with_projection(point, segment_start, segment_end)
+        if distance < min_distance:
+            min_distance = distance
+            closest_projection = projection
+    
+    return min_distance, closest_projection
+
+def line_assignment_by_perpendicular_distance(centroid, lines):
+    closest_line = None
+    closest_distance = float('inf')
+    proj_coord = None
+    for line in lines:
+        distance_from_lane, coord = point_to_polyline_distance_with_projection(centroid, line)
+        if distance_from_lane < closest_distance:
+            closest_distance = distance_from_lane
+            closest_line = line
+            proj_coord = coord
+    return closest_line, proj_coord
 
 def save_line_assignment(lineID, bboxes):
     pass
@@ -95,31 +170,6 @@ def get_screen_size():
     root.destroy()
     return (width, height)
 
-
-def get_centerline(polygon_coords):
-    # Create a Polygon object using shapely
-    polygon = Polygon(polygon_coords)
-    centerline = pygeoops.centerline(polygon)
-    # Convert centerline to a list of coordinates
-    centerline_coords = np.array(centerline.coords).T
-    print(centerline_coords)
-    return centerline_coords
-        
-def draw_centerline_on_image(image, centerline_coords, color=255, thickness=2):
-    # Convert coordinates to integer tuples
-    centerline_coords = np.array(centerline_coords, dtype=np.int32)
-    
-    # Draw the centerline on the image
-    for i in range(len(centerline_coords) - 1):
-        pt1 = tuple(centerline_coords[i])
-        pt2 = tuple(centerline_coords[i + 1])
-        print(pt1)
-        print(pt2)
-        cv2.line(image, pt1, pt2, color, thickness)
-    
-    return image
-
-
 ##############################################################################
 ###########################DRIVER CODE########################################
 ##############################################################################
@@ -128,27 +178,31 @@ roadNum = input("Enter road ID: ")
 
 # directory paths
 main_folder_dir = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/"
-image_path = main_folder_dir + "images/" + roadNum + ".jpg"
-lane_polygons_path = main_folder_dir + "v2result/manual/polygons/" + roadNum + ".txt"
-
+image_path = main_folder_dir + "centroidimages/" + roadNum + "/" + roadNum +".jpg"
+lane_path = main_folder_dir + "v3result/manual/lines/" + roadNum + ".txt"
+centroid_path = main_folder_dir + "centroidimages/" + roadNum + ".csv"
 # get the saved polygons from the image and draw the polygons on a black image
-polygons = load_polygons_from_file(lane_polygons_path)
-road_image = cv2.imread(image_path)
+lines = load_lines_from_file(lane_path)
+test_image = cv2.imread(image_path)
 width, height = get_camera_size(roadNum)
-lane_lines_image = np.zeros((height, width), dtype=np.uint8)
-skeleton_lanes = []
-skeletonized = None
-res = None
-# get the median line in each polygon.
-## CURRENT V1
-for poly in polygons:
-    line_points = get_centerline(poly)
-    draw_centerline_on_image(lane_lines_image, line_points)
+
+# draw lane lines on image
+for line in lines:
+    line = line.reshape((-1, 1, 2)).astype(np.int32)
+    cv2.polylines(test_image, [line], isClosed=False, color=(255, 0, 0), thickness=2)
+
+centroids = get_vehicles_from_csv(centroid_path)
+for centroid in centroids:
+    cv2.circle(test_image, centroid, 5, (0, 200, 0), -1)
+    centroid_line_assignment, projection = line_assignment_by_perpendicular_distance(centroid, lines)
+    print(projection)
+    cv2.circle(test_image, (int(projection[0]), int(projection[1])), 5, (0, 0, 255), -1)
+
 
 cv2.namedWindow("lines", cv2.WINDOW_NORMAL)
 screen_width, screen_height = get_screen_size()
 cv2.resizeWindow("lines", screen_width, screen_height)
-cv2.imshow("lines", lane_lines_image)
+cv2.imshow("lines", test_image)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
