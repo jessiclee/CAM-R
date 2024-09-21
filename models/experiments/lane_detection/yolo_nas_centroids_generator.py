@@ -7,11 +7,12 @@ Original file is located at
     https://colab.research.google.com/drive/1azxVBWwcOglExLL4yUtvsQWDJp6Rvdki
     
 Only use python3.10, no more no less
-super-gradeints==3.7.1 Version
+super-gradients==3.7.1 Version
 """
 import os
 from PIL import Image
 import numpy as np
+import pandas as pd
 import logging
 import torch
 from super_gradients.training import models
@@ -20,11 +21,9 @@ from super_gradients.training import models
 logger = logging.getLogger()
 logger.setLevel(logging.CRITICAL)
 
-
 # yolo_nas_l = models.get("yolo_nas_l", pretrained_weights="coco")
 # yolo_nas_l = torch.load("C:/Users/Jess/Desktop/School/FYP/cvat/serverless/pytorch/Deci-AI/super-gradients/nuclio/yolo_nas_l.pt")
-yolo_nas_l = models.get('yolo_nas_s', num_classes=4, 
-                         checkpoint_path="C:/Users/Zhiyi/Desktop/FYP/CAM-R/models/experiments/lane_detection/19.pth")
+yolo_nas_l = models.get('yolo_nas_s', num_classes=4, checkpoint_path="C:/Users/Zhiyi/Desktop/FYP/CAM-R/models/experiments/lane_detection/19.pth")
 
 include_labels = ["car", "bus", "truck", "motorcycle"]
 
@@ -65,7 +64,6 @@ def apply_yolo_nas_l(image_path):
 
           # Update the filtered image with filtered detections
           pred.bboxes_xyxy = np.array(bboxes)
-
           xy_array.append(pred.bboxes_xyxy)
   return xy_array
 
@@ -82,8 +80,6 @@ def calc_centroids(xy_array):
       centroids_and_box.append([[cx, cy] , [xmin, ymin, xmax, ymax]])
   return centroids_arr, centroids_and_box
 
-import pandas as pd
-
 def save_csv(camera_id, file_path, centroids_and_box):
   # Flatten the array and create a DataFrame
   flattened_data = [[cen_x, cen_y, xmin, ymin, xmax, ymax] for [cen_x, cen_y], [xmin, ymin, xmax, ymax] in centroids_and_box]
@@ -93,7 +89,6 @@ def save_csv(camera_id, file_path, centroids_and_box):
 
   # Save to CSV
   df.to_csv(file_path + camera_id + ".csv", index=False)
-
 
 camera_ids = [
               "2703"
