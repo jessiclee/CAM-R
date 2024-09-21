@@ -1,8 +1,9 @@
 """
 Line Assignment Version 2.0
 
-SUMMARY: Given a centroid, get the perpendicular distance then assign it to the lane that it is the closest to.
-
+SUMMARY: 
+Given a centroid, get the perpendicular distance then assign it to the lane that it is the closest to.
+Centroid is generated using yolo_nas_centroids_generator.py
 DEPENDENCIES: numpy, opencv, os, pandas, tkinter
 """
 
