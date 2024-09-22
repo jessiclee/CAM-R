@@ -80,7 +80,8 @@ def apply_yolo_nas_l(image_path):
             # Update the filtered image with filtered detections
             pred.bboxes_xyxy = np.array(bboxes)
             xy_array.append(pred.bboxes_xyxy)
-    return xy_array
+            print(class_indx)
+    return xy_array, class_indx
 
 def calc_centroids(xy_array):
     centroids_arr = []
@@ -95,24 +96,24 @@ def calc_centroids(xy_array):
             centroids_and_box.append([[cx, cy] , [xmin, ymin, xmax, ymax]])
     return centroids_arr, centroids_and_box
 
-def save_csv(camera_id, file_path, centroids_and_box):
+def save_csv(camera_id, file_path, centroids_and_box, class_indx):
     # Flatten the array and create a DataFrame
     flattened_data = [[cen_x, cen_y, xmin, ymin, xmax, ymax] for [cen_x, cen_y], [xmin, ymin, xmax, ymax] in centroids_and_box]
 
     # Create the DataFrame with headers
     df = pd.DataFrame(flattened_data, columns=['cen_x', 'cen_y', 'xmin', 'ymin', 'xmax', 'ymax'])
+    df["class"] = class_indx
 
     # Save to CSV
     df.to_csv(file_path + camera_id + ".csv", index=False)
-
 
 ##############################################################################
 ###########################DRIVER CODE########################################
 ##############################################################################
 
 for camera_id in camera_ids:
-    xy_array = apply_yolo_nas_l(camera_id)
+    xy_array, class_indx = apply_yolo_nas_l(camera_id)
     centroids_arr, centroids_and_box = calc_centroids(xy_array)
     # save_csv(camera_id, "/content/drive/My Drive/FYP/csv/", centroids_and_box)
-    save_csv(camera_id, "C:/Users/Zhiyi/Desktop/FYP/newtraffic/centroidimages/", centroids_and_box)
+    save_csv(camera_id, "C:/Users/Zhiyi/Desktop/FYP/newtraffic/centroidimages/", centroids_and_box, class_indx)
     print("Done w/ " + camera_id)
