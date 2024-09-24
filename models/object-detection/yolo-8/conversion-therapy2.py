@@ -23,4 +23,4 @@ def convert_classes(path):
                 print("changed lines: ", modified_lines)
                 f.write('\n'.join(modified_lines))
 
-convert_classes("C:/Users/User/CAM-R/models/object-detection/yolo_data/test-coco-certified/labels")
+convert_classes("C:/Users/jesle/Desktop/fyp/yolo_data_latest/valid/labels")

@@ -7,5 +7,10 @@ models/object-detection/yolo_data/
 models/object-detection/voc_data/
 models/object-detection/training/
 models/object-detection/yolo-8/runs
+models/traffic_density/end
+models/traffic_density/photos
+models/traffic_density/split_data
+models/experiments/lane_detection/lines
 checkpoints/
 *.pth
+*.pyc
