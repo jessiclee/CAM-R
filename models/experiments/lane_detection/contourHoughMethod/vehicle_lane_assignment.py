@@ -184,7 +184,7 @@ roadNum = input("Enter road ID: ")
 
 # directory paths
 main_folder_dir = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/"
-image_path = main_folder_dir + "centroidimages/" + roadNum + "/" + roadNum +".jpg"
+image_path = main_folder_dir + "centroidimages/" + roadNum +".jpg"
 lane_path = main_folder_dir + "v3result/manual/lines/" + roadNum + ".txt"
 centroid_path = main_folder_dir + "centroidimages/" + roadNum + ".csv"
 # get the saved polygons from the image and draw the polygons on a black image

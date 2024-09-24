@@ -27,10 +27,6 @@ from super_gradients.training import models
 ########################### VARIABLES ########################################
 ##############################################################################
 
-camera_ids = [
-                "2703"
-                ]
-
 # Remove all Logger notifications
 logger = logging.getLogger()
 logger.setLevel(logging.CRITICAL)
@@ -46,20 +42,47 @@ os.chdir(ROOT_DIR)
 ##############################################################################
 ########################### FUNCTIONS ########################################
 ##############################################################################
+def save_csv(camera_id, file_path, centroids_and_box, class_indx):
+    # Flatten the array and create a DataFrame
+    flattened_data = [[cen_x, cen_y, xmin, ymin, xmax, ymax] for [cen_x, cen_y], [xmin, ymin, xmax, ymax] in centroids_and_box]
 
-def apply_yolo_nas_l(image_path):
-    os.chdir(ROOT_DIR + "/" + image_path)
+    # Create the DataFrame with headers
+    df = pd.DataFrame(flattened_data, columns=['cen_x', 'cen_y', 'xmin', 'ymin', 'xmax', 'ymax'])
+    df["class"] = class_indx
+
+    # Save to CSV
+    df.to_csv(file_path + camera_id + ".csv", index=False)
+
+def calc_centroids(xy_array):
+    print("xy array is " + str(len(xy_array)))
+    centroids_arr = []
+    centroids_and_box = []
+    for image in xy_array:
+        for box in image:
+            # 0 - xmin, 1 - ymin, 2 - xmax, 3 - ymax
+            xmin, ymin, xmax, ymax = box
+            cx = int((xmin + xmax) / 2)
+            cy = int((ymin + ymax) / 2)
+            centroids_arr.append([cx, cy])
+            centroids_and_box.append([[cx, cy] , [xmin, ymin, xmax, ymax]])
+    print("centroids_and_box is  " + str(len(centroids_and_box)))
+    return centroids_arr, centroids_and_box
+
+def apply_yolo_nas_l():
+    os.chdir(ROOT_DIR)
 
     # List of accepted labels
     accepted_list = [ 3,4,6,8]  # Example labels that are accepted
 
-    xy_array = []
+    
     # Apply the YOLO-NAS model to each image
     for filename in os.listdir("."):
         if filename.endswith(".jpg") or filename.endswith(".png"):  # Adjust based on your image file types
+            camera_id, extension = os.path.splitext(filename)
+            xy_array = []
             image_path = os.path.join(".", filename)
             image = Image.open(image_path)
-            filtered_image = yolo_nas_l.predict(image, conf=0.25)
+            filtered_image = yolo_nas_l.predict(image, conf=0.5)
             # print(filtered_image)
             filtered_detections = []
             bboxes = []
@@ -76,44 +99,21 @@ def apply_yolo_nas_l(image_path):
                     bboxes.append(pred.bboxes_xyxy[index])
                     class_indx.append(label)
                     conf.append(pred.confidence.astype(float)[index])
-
+            
             # Update the filtered image with filtered detections
-            pred.bboxes_xyxy = np.array(bboxes)
-            xy_array.append(pred.bboxes_xyxy)
-            print(class_indx)
-    return xy_array, class_indx
+            xy_array.append(np.array(bboxes))
+            centroids_arr, centroids_and_box = calc_centroids(xy_array)
+            save_csv(camera_id, "C:/Users/Zhiyi/Desktop/FYP/newtraffic/centroidimages/", centroids_and_box, class_indx)
+        # return filename, xy_array, class_indx
 
-def calc_centroids(xy_array):
-    centroids_arr = []
-    centroids_and_box = []
-    for image in xy_array:
-        for box in image:
-            # 0 - xmin, 1 - ymin, 2 - xmax, 3 - ymax
-            xmin, ymin, xmax, ymax = box
-            cx = int((xmin + xmax) / 2)
-            cy = int((ymin + ymax) / 2)
-            centroids_arr.append([cx, cy])
-            centroids_and_box.append([[cx, cy] , [xmin, ymin, xmax, ymax]])
-    return centroids_arr, centroids_and_box
-
-def save_csv(camera_id, file_path, centroids_and_box, class_indx):
-    # Flatten the array and create a DataFrame
-    flattened_data = [[cen_x, cen_y, xmin, ymin, xmax, ymax] for [cen_x, cen_y], [xmin, ymin, xmax, ymax] in centroids_and_box]
-
-    # Create the DataFrame with headers
-    df = pd.DataFrame(flattened_data, columns=['cen_x', 'cen_y', 'xmin', 'ymin', 'xmax', 'ymax'])
-    df["class"] = class_indx
-
-    # Save to CSV
-    df.to_csv(file_path + camera_id + ".csv", index=False)
 
 ##############################################################################
 ###########################DRIVER CODE########################################
 ##############################################################################
 
-for camera_id in camera_ids:
-    xy_array, class_indx = apply_yolo_nas_l(camera_id)
-    centroids_arr, centroids_and_box = calc_centroids(xy_array)
-    # save_csv(camera_id, "/content/drive/My Drive/FYP/csv/", centroids_and_box)
-    save_csv(camera_id, "C:/Users/Zhiyi/Desktop/FYP/newtraffic/centroidimages/", centroids_and_box, class_indx)
-    print("Done w/ " + camera_id)
+
+apply_yolo_nas_l()
+# centroids_arr, centroids_and_box = calc_centroids(xy_array)
+# save_csv(camera_id, "/content/drive/My Drive/FYP/csv/", centroids_and_box)
+
+print("Done")
