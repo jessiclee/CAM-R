@@ -36,7 +36,7 @@ def apply_yolo_nas_l(filename):
         xy_array = []
         image_path = os.path.join(".", filename)
         image = Image.open(image_path)
-        filtered_image = yolo_nas_l.predict(image, conf=0.35)
+        filtered_image = yolo_nas_l.predict(image, conf=0.5)
         bboxes = []
         class_indx = []
         conf = []
@@ -201,6 +201,31 @@ def main_function(mask_path, predicting_image_path):
     visualise(overlay_image, green_centroids, blue_centroids, centroids_outside_lane, lane_key_points, lane_assignments)
     save_json(lane_assignments, os.path.basename(mask_path).split('.')[0])
 
-mask_path = '../../experiments/lane_detection/overlap_lane_masks/1701.jpg'
-predicting_image_path = '../../experiments/lane_detection/test_images/CENTRAL EXPRESSWAY/1701/1701_19-05-2024_23-10-55.jpg'
+# Single usage
+mask_path = '../../experiments/lane_detection/overlap_lane_masks/1706.jpg'
+predicting_image_path = 'C:/Users/Jess/OneDrive - Singapore Management University/FYP/lane_assignment_testing/test_images/1706_01-07-2024_14-40-01.jpg'
 main_function(mask_path, predicting_image_path)
+
+
+# # Looping usage
+# def loop_through_directories(mask_dir, predicting_image_dir):
+#     # Get the list of files in both directories
+#     mask_files = sorted([f for f in os.listdir(mask_dir) if f.endswith('.jpg') or f.endswith('.png')])
+#     predicting_image_files = sorted([f for f in os.listdir(predicting_image_dir) if f.endswith('.jpg') or f.endswith('.png')])
+
+#     # Check if both directories have the same number of files
+#     if len(mask_files) != len(predicting_image_files):
+#         print("Warning: The number of mask files and predicting image files do not match.")
+    
+#     # Loop through both lists, assuming they correspond to each other by name or order
+#     for mask_file, predicting_image_file in zip(mask_files, predicting_image_files):
+#         mask_path = os.path.join(mask_dir, mask_file)
+#         predicting_image_path = os.path.join(predicting_image_dir, predicting_image_file)
+
+#         # Call the main function for each pair of mask and predicting image
+#         main_function(mask_path, predicting_image_path)
+
+# # Example usage
+# mask_dir = '../../experiments/lane_detection/overlap_lane_masks'
+# predicting_image_dir = 'C:/Users/Jess/OneDrive - Singapore Management University/FYP/lane_assignment_testing/test_images'
+# loop_through_directories(mask_dir, predicting_image_dir)
