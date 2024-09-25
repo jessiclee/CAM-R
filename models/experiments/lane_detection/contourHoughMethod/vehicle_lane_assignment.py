@@ -159,6 +159,7 @@ def line_assignment_by_perpendicular_distance(centroid, lines):
     closest_distance = float('inf')
     proj_coord = None
     lane_id = 1
+    isValid = True
     for line in lines:
         distance_from_lane, coord = point_to_polyline_distance_with_projection(centroid, line)
         if distance_from_lane < closest_distance:
@@ -167,7 +168,10 @@ def line_assignment_by_perpendicular_distance(centroid, lines):
             proj_coord = coord
         lane_id += 1
     
-    return closest_line, proj_coord
+    if closest_distance > 100:
+        isValid = False
+
+    return closest_line, proj_coord, isValid
 
 # Function to get screen size
 def get_screen_size():
@@ -218,16 +222,19 @@ color_dict = {
 for centroid in centroids:
     coord = (centroid[0], centroid[1])
     cv2.circle(test_image, coord, 5, (0, 200, 0), -1)
-    centroid_line_assignment, projection = line_assignment_by_perpendicular_distance(coord, lines)
-    cv2.circle(test_image, (int(projection[0]), int(projection[1])), 5, color_dict.get(centroid[2]), -1)
     # This prints out the coordinates of the centroids on the image
     cv2.putText(test_image,"(" + str(centroid[0]) +", " + str(centroid[1]) +")", (centroid[0] + 4, centroid[1] + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-    grouping = result_dict.get(centroid_line_assignment)
-    if grouping is None:
-        grouping = [centroid]
+    centroid_line_assignment, projection, isValid = line_assignment_by_perpendicular_distance(coord, lines)
+    if isValid is True:
+        cv2.circle(test_image, (int(projection[0]), int(projection[1])), 5, color_dict.get(centroid[2]), -1)
+        grouping = result_dict.get(centroid_line_assignment)
+        if grouping is None:
+            grouping = [centroid]
+        else:
+            grouping.append(centroid)
+        result_dict.update({centroid_line_assignment: grouping})
     else:
-        grouping.append(centroid)
-    result_dict.update({centroid_line_assignment: grouping})
+        cv2.circle(test_image, coord, 3, (0,0,0), -1)
 
 # Convert NumPy arrays to lists
 for key in result_dict:
@@ -236,8 +243,8 @@ for key in result_dict:
 # Now serialize to JSON
 json_data = json.dumps(result_dict)
 
-with open("C:/Users/Zhiyi/Desktop/FYP/newtraffic/centroidimages/json_results/" + imagename + '.json', 'w') as f:
-    f.write(json_data)
+# with open("C:/Users/Zhiyi/Desktop/FYP/newtraffic/centroidimages/json_results/" + imagename + '.json', 'w') as f:
+#     f.write(json_data)
 # Print or save the JSON data
 print(json_data)
 
@@ -247,3 +254,77 @@ cv2.resizeWindow("lines", screen_width, screen_height)
 cv2.imshow("lines", test_image)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
+
+## THIS IS TO GENERATE THE LANE ASSIGNMENTS JSON. please ignore this 
+
+# roads = [4701, 4702, 4704, 4705, 4706, 4707, 4708, 4709, 4710, 4712, 4714, 
+#          4716, 4798, 4799, 6716, 2703, 2704, 2705, 2706, 2707, 2708, 1701, 
+#          1702, 1703, 1704, 1705, 1706, 1707, 1709, 1711, 1001, 1113, 3702, 
+#          3705, 3793, 3795, 3796, 3797, 3798, 1004, 1005, 1006, 1504, 3704, 
+#          5798, 8701, 8702, 8704, 8706, 1501, 1502, 1503, 1505, 1002, 1003, 
+#          5794, 5795, 5797, 5799, 6701, 6703, 6704, 6705, 6706, 6708, 6710, 
+#          6711, 6712, 6713, 6714, 6715, 7797, 7798, 9701, 9702, 9703, 9704, 
+#          9705, 9706, 1111, 1112, 7791, 7793, 7794, 7795, 7796, 4703, 4713, 
+#          2701, 2702]
+# for road in roads:
+#     # directory paths
+#     roadNum = str(road)
+#     imagename = roadNum
+#     main_folder_dir = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/"
+#     image_path = main_folder_dir + "centroidimages/" + imagename + ".jpg"
+#     lane_path = main_folder_dir + "v3result/manual/lines/" + roadNum + ".txt"
+#     centroid_path = main_folder_dir + "centroidimages/results/" + roadNum + ".csv"
+#     # get the saved polygons from the image and draw the polygons on a black image
+#     lines = load_lines_from_file(lane_path)
+#     test_image = cv2.imread(image_path)
+#     width, height = get_camera_size(roadNum)
+
+#     lane_id = 1
+#     # draw lane lines on image
+#     for line in lines:
+#         midpoint_x = int((line[0][0] + line[1][0]) / 2)
+#         midpoint_y = int((line[0][1] + line[1][1]) / 2)
+#         cv2.putText(test_image,str(lane_id), (midpoint_x,midpoint_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+#         line = line.reshape((-1, 1, 2)).astype(np.int32)
+#         cv2.polylines(test_image, [line], isClosed=False, color=(255, 0, 0), thickness=2)
+#         lane_id+=1
+
+#     centroids = get_vehicles_from_csv(centroid_path)
+
+#     result_dict = {}
+
+#     # You can change the colours to ur liking 
+#     color_dict = {
+#         1: (0, 0, 255), # red = truck
+#         2: (255, 0, 255), # pink = motorcycle
+#         3: (255,182,193), # grey ish = car
+#         4: (255, 255, 0) # neon blue = bus
+#     }
+#     for centroid in centroids:
+#         coord = (centroid[0], centroid[1])
+#         cv2.circle(test_image, coord, 5, (0, 200, 0), -1)
+#         # This prints out the coordinates of the centroids on the image
+#         cv2.putText(test_image,"(" + str(centroid[0]) +", " + str(centroid[1]) +")", (centroid[0] + 4, centroid[1] + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+#         centroid_line_assignment, projection, isValid = line_assignment_by_perpendicular_distance(coord, lines)
+#         if isValid is True:
+#             cv2.circle(test_image, (int(projection[0]), int(projection[1])), 5, color_dict.get(centroid[2]), -1)
+#             grouping = result_dict.get(centroid_line_assignment)
+#             if grouping is None:
+#                 grouping = [centroid]
+#             else:
+#                 grouping.append(centroid)
+#             result_dict.update({centroid_line_assignment: grouping})
+#         else:
+#             cv2.circle(test_image, coord, 3, (0,0,0), -1)
+
+#     # Convert NumPy arrays to lists
+#     for key in result_dict:
+#         result_dict[key] = [arr.tolist() for arr in result_dict[key]]
+
+#     # Now serialize to JSON
+#     json_data = json.dumps(result_dict)
+
+#     with open("C:/Users/Zhiyi/Desktop/FYP/newtraffic/centroidimages/json_results/" + imagename + '.json', 'w') as f:
+#         f.write(json_data)
+#     # Print or save the JSON data
+#     print(json_data)

@@ -79,7 +79,7 @@ def apply_yolo_nas_l():
             xy_array = []
             image_path = os.path.join(".", filename)
             image = Image.open(image_path)
-            filtered_image = yolo_nas_l.predict(image, conf=0.35)
+            filtered_image = yolo_nas_l.predict(image, conf=0.5)
             bboxes = []
             class_indx = []
             conf = []
