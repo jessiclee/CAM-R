@@ -13,7 +13,7 @@ yolo_nas_l = models.get('yolo_nas_s', num_classes=4, checkpoint_path="19.pth")
 
 # Function to calculate centroids
 def calc_centroids(xy_array):
-    print("xy array is " + str(len(xy_array)))
+    # print("xy array is " + str(len(xy_array)))
     centroids_arr = []
     centroids_and_box = []
     for image in xy_array:
@@ -23,7 +23,7 @@ def calc_centroids(xy_array):
             cy = int((ymin + ymax) / 2)
             centroids_arr.append([cx, cy])
             centroids_and_box.append([[cx, cy], [xmin, ymin, xmax, ymax]])
-    print("centroids_and_box is  " + str(len(centroids_and_box)))
+    # print("centroids_and_box is  " + str(len(centroids_and_box)))
     return centroids_arr, centroids_and_box
 
 # Function to apply YOLO-NAS to an image
@@ -110,7 +110,7 @@ def visualise(overlay_image, green_centroids, blue_centroids, centroids_outside_
     # Display plot
     plt.show()
     
-def save_json(lane_assignments):
+def save_json(lane_assignments, basename):
     # Save the dictionary with only cen_x, cen_y, and class to a JSON file
     lane_assignments_serializable = {
         lane: [[int(cen_x), int(cen_y), int(class_label)] for (cen_x, cen_y, xmin, ymin, xmax, ymax, class_label) in centroids]
@@ -118,89 +118,89 @@ def save_json(lane_assignments):
     }
 
     # Save to JSON file
-    with open('../lane_assignments_cen_class.json', 'w') as file:
+    with open('accuracy_test/predictions/' + basename +'.json', 'w') as file:
         json.dump(lane_assignments_serializable, file)
 
-    
-# Load the provided mask image
+def main_function(mask_path, predicting_image_path):
+    # Load the provided mask image
+    mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+
+    # Apply YOLO-NAS to the image to get centroids and bounding boxes
+    centroids = apply_yolo_nas_l(predicting_image_path)
+    predicting_image = cv2.imread(predicting_image_path, cv2.IMREAD_COLOR)
+
+    # Convert the mask into binary (0 or 255 values)
+    _, binary_mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
+
+    # Find contours in the mask to identify lanes
+    contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    # Overlay the mask onto the original image at low opacity
+    overlay_image = predicting_image.copy()
+    alpha = 0.3  # Transparency factor
+    overlay_image[binary_mask == 255] = overlay_image[binary_mask == 255] * (1 - alpha) + 255 * alpha
+
+    # Image dimensions
+    img_height, img_width = binary_mask.shape
+
+    # Threshold to assign proximity-based centroids (10% of image size)
+    threshold_distance = 0.1 * min(img_width, img_height)
+
+    # Get key points for each lane
+    lane_key_points = []
+    for contour in contours:
+        key_points = get_key_points(contour, num_points=24)
+        lane_key_points.append(key_points)
+
+    # Assign centroids to lanes based on contours
+    lane_assignments = {f"{i+1}": [] for i in range(len(contours))}
+    centroids_outside_lane = []
+
+    # Separate lists for visualizing green and blue centroids
+    green_centroids = []
+    blue_centroids = []
+
+    for centroid in centroids:
+        cen_x, cen_y, xmin, ymin, xmax, ymax, class_label = centroid
+        assigned = False
+        for i, contour in enumerate(contours):
+            if cv2.pointPolygonTest(contour, (cen_x, cen_y), False) >= 0:
+                lane_assignments[f"{i+1}"].append(centroid)
+                green_centroids.append(centroid)
+                assigned = True
+                break
+        if not assigned:
+            centroids_outside_lane.append(centroid)
+
+    # Reassign centroids that are close to the key points into lanes
+    new_outside_lane = []
+    centroid_distances = []
+
+    for centroid in centroids_outside_lane:
+        cen_x, cen_y, xmin, ymin, xmax, ymax, class_label = centroid
+        min_distance = float('inf')
+        closest_key_point = None
+        closest_lane = None
+        
+        for i, key_points in enumerate(lane_key_points):
+            for key_point in key_points:
+                distance = np.linalg.norm(np.array([cen_x, cen_y]) - np.array(key_point))
+                if distance < min_distance:
+                    min_distance = distance
+                    closest_key_point = key_point
+                    closest_lane = f"{i+1}"
+        
+        if min_distance <= threshold_distance:
+            lane_assignments[closest_lane].append(centroid)
+            blue_centroids.append(centroid)
+        else:
+            new_outside_lane.append(centroid)
+
+    centroids_outside_lane = new_outside_lane
+
+    visualise(overlay_image, green_centroids, blue_centroids, centroids_outside_lane, lane_key_points, lane_assignments)
+    save_json(lane_assignments, os.path.basename(mask_path).split('.')[0])
+
 mask_path = '../../experiments/lane_detection/overlap_lane_masks/1701.jpg'
-mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-
-# Load the original image (same size as the mask)
 predicting_image_path = '../../experiments/lane_detection/test_images/CENTRAL EXPRESSWAY/1701/1701_19-05-2024_23-10-55.jpg'
-
-# Apply YOLO-NAS to the image to get centroids and bounding boxes
-centroids = apply_yolo_nas_l(predicting_image_path)
-predicting_image = cv2.imread(predicting_image_path, cv2.IMREAD_COLOR)
-
-# Convert the mask into binary (0 or 255 values)
-_, binary_mask = cv2.threshold(mask, 127, 255, cv2.THRESH_BINARY)
-
-# Find contours in the mask to identify lanes
-contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-# Overlay the mask onto the original image at low opacity
-overlay_image = predicting_image.copy()
-alpha = 0.3  # Transparency factor
-overlay_image[binary_mask == 255] = overlay_image[binary_mask == 255] * (1 - alpha) + 255 * alpha
-
-# Image dimensions
-img_height, img_width = binary_mask.shape
-
-# Threshold to assign proximity-based centroids (10% of image size)
-threshold_distance = 0.1 * min(img_width, img_height)
-
-# Get key points for each lane
-lane_key_points = []
-for contour in contours:
-    key_points = get_key_points(contour, num_points=24)
-    lane_key_points.append(key_points)
-
-# Assign centroids to lanes based on contours
-lane_assignments = {f"{i+1}": [] for i in range(len(contours))}
-centroids_outside_lane = []
-
-# Separate lists for visualizing green and blue centroids
-green_centroids = []
-blue_centroids = []
-
-for centroid in centroids:
-    cen_x, cen_y, xmin, ymin, xmax, ymax, class_label = centroid
-    assigned = False
-    for i, contour in enumerate(contours):
-        if cv2.pointPolygonTest(contour, (cen_x, cen_y), False) >= 0:
-            lane_assignments[f"{i+1}"].append(centroid)
-            green_centroids.append(centroid)
-            assigned = True
-            break
-    if not assigned:
-        centroids_outside_lane.append(centroid)
-
-# Reassign centroids that are close to the key points into lanes
-new_outside_lane = []
-centroid_distances = []
-
-for centroid in centroids_outside_lane:
-    cen_x, cen_y, xmin, ymin, xmax, ymax, class_label = centroid
-    min_distance = float('inf')
-    closest_key_point = None
-    closest_lane = None
-    
-    for i, key_points in enumerate(lane_key_points):
-        for key_point in key_points:
-            distance = np.linalg.norm(np.array([cen_x, cen_y]) - np.array(key_point))
-            if distance < min_distance:
-                min_distance = distance
-                closest_key_point = key_point
-                closest_lane = f"{i+1}"
-    
-    if min_distance <= threshold_distance:
-        lane_assignments[closest_lane].append(centroid)
-        blue_centroids.append(centroid)
-    else:
-        new_outside_lane.append(centroid)
-
-centroids_outside_lane = new_outside_lane
-
-visualise(overlay_image, green_centroids, blue_centroids, centroids_outside_lane, lane_key_points, lane_assignments)
-save_json(lane_assignments)
+main_function(mask_path, predicting_image_path)
