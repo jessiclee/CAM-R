@@ -183,9 +183,10 @@ def get_screen_size():
 ##############################################################################
 # input road
 roadNum = input("Enter road ID: ")
+imagename = roadNum
 # directory paths
 main_folder_dir = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/"
-image_path = main_folder_dir + "centroidimages/" + roadNum + ".jpg"
+image_path = main_folder_dir + "centroidimages/" + imagename + ".jpg"
 lane_path = main_folder_dir + "v3result/manual/lines/" + roadNum + ".txt"
 centroid_path = main_folder_dir + "centroidimages/results/" + roadNum + ".csv"
 # get the saved polygons from the image and draw the polygons on a black image
@@ -198,7 +199,7 @@ lane_id = 1
 for line in lines:
     midpoint_x = int((line[0][0] + line[1][0]) / 2)
     midpoint_y = int((line[0][1] + line[1][1]) / 2)
-    line_id = cv2.putText(test_image,str(lane_id), (midpoint_x,midpoint_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+    cv2.putText(test_image,str(lane_id), (midpoint_x,midpoint_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
     line = line.reshape((-1, 1, 2)).astype(np.int32)
     cv2.polylines(test_image, [line], isClosed=False, color=(255, 0, 0), thickness=2)
     lane_id+=1
@@ -207,10 +208,20 @@ centroids = get_vehicles_from_csv(centroid_path)
 
 result_dict = {}
 
+# You can change the colours to ur liking 
+color_dict = {
+    1: (0, 0, 255), # red = truck
+    2: (255, 0, 255), # pink = motorcycle
+    3: (255,182,193), # grey ish = car
+    4: (255, 255, 0) # neon blue = bus
+}
 for centroid in centroids:
-    cv2.circle(test_image, (centroid[0], centroid[1]), 5, (0, 200, 0), -1)
-    centroid_line_assignment, projection = line_assignment_by_perpendicular_distance((centroid[0], centroid[1]), lines)
-    cv2.circle(test_image, (int(projection[0]), int(projection[1])), 5, (0, 0, 255), -1)
+    coord = (centroid[0], centroid[1])
+    cv2.circle(test_image, coord, 5, (0, 200, 0), -1)
+    centroid_line_assignment, projection = line_assignment_by_perpendicular_distance(coord, lines)
+    cv2.circle(test_image, (int(projection[0]), int(projection[1])), 5, color_dict.get(centroid[2]), -1)
+    # This prints out the coordinates of the centroids on the image
+    cv2.putText(test_image,"(" + str(centroid[0]) +", " + str(centroid[1]) +")", (centroid[0] + 4, centroid[1] + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
     grouping = result_dict.get(centroid_line_assignment)
     if grouping is None:
         grouping = [centroid]
