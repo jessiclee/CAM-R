@@ -33,7 +33,6 @@ logger.setLevel(logging.CRITICAL)
 
 # Setting up YOLO NAS model
 yolo_nas_l = models.get('yolo_nas_s', num_classes=4, checkpoint_path="C:/Users/Zhiyi/Desktop/FYP/CAM-R/models/experiments/lane_detection/contourHoughMethod/19.pth")
-include_labels = ["car", "bus", "truck", "motorcycle"]
 
 # Change directory to the folder containing the images
 ROOT_DIR = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/centroidimages"
@@ -70,11 +69,8 @@ def calc_centroids(xy_array):
 
 def apply_yolo_nas_l():
     os.chdir(ROOT_DIR)
-
     # List of accepted labels
-    accepted_list = [ 3,4,6,8]  # Example labels that are accepted
-
-    
+    accepted_list = [1,2,3,4]  # Example labels that are accepted
     # Apply the YOLO-NAS model to each image
     for filename in os.listdir("."):
         if filename.endswith(".jpg") or filename.endswith(".png"):  # Adjust based on your image file types
@@ -83,16 +79,12 @@ def apply_yolo_nas_l():
             xy_array = []
             image_path = os.path.join(".", filename)
             image = Image.open(image_path)
-            filtered_image = yolo_nas_l.predict(image, conf=0.3)
-            # print(filtered_image)
-            filtered_detections = []
+            filtered_image = yolo_nas_l.predict(image, conf=0.35)
             bboxes = []
-            class_names = []
             class_indx = []
             conf = []
             pred = filtered_image.prediction
             labels = pred.labels.astype(int)
-
             for index, label in enumerate(labels):
                 # print(label)
                 if label in accepted_list:
