@@ -134,9 +134,9 @@ def pipeline(roadNum, is_hd, main_dir):
 
     # get the centroid csv of the road
     df = pd.read_csv(main_folder_dir + roadNum +'.csv')
-    # df['cen_y'] = df['cen_y'].astype(int)
+    df['ymax'] = df['ymax'].astype(int)
     x = df['cen_x'].values
-    y = df['cen_y'].values
+    y = df['ymax'].values
     data = np.array(list(zip(x, y)))
 
     # creating a black binary image with image dimensions 

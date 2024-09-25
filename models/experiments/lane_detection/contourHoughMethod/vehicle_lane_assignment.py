@@ -13,6 +13,7 @@ DEPENDENCIES: numpy, opencv, os, pandas, tkinter
 import cv2
 import numpy as np
 import os
+import json 
 import pandas as pd
 import tkinter as tk
 
@@ -89,7 +90,8 @@ def get_vehicles_from_csv(file_path):
     df = pd.read_csv(file_path)
     x = df['cen_x'].values
     y = df['cen_y'].values
-    data = np.array(list(zip(x, y)))
+    classes = df['class'].values
+    data = np.array(list(zip(x, y, classes)))
     return data
 
 def point_to_segment_distance_with_projection(point, segment_start, segment_end):
@@ -156,12 +158,15 @@ def line_assignment_by_perpendicular_distance(centroid, lines):
     closest_line = None
     closest_distance = float('inf')
     proj_coord = None
+    lane_id = 1
     for line in lines:
         distance_from_lane, coord = point_to_polyline_distance_with_projection(centroid, line)
         if distance_from_lane < closest_distance:
             closest_distance = distance_from_lane
-            closest_line = line
+            closest_line = lane_id
             proj_coord = coord
+        lane_id += 1
+    
     return closest_line, proj_coord
 
 # Function to get screen size
@@ -173,9 +178,6 @@ def get_screen_size():
     root.destroy()
     return (width, height)
 
-def save_line_assignment(line, bboxes):
-    pass
-
 ##############################################################################
 ###########################DRIVER CODE########################################
 ##############################################################################
@@ -184,7 +186,7 @@ roadNum = input("Enter road ID: ")
 
 # directory paths
 main_folder_dir = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/"
-image_path = main_folder_dir + "centroidimages/" + roadNum + "/" + roadNum +".jpg"
+image_path = main_folder_dir + "centroidimages/" + roadNum +".jpg"
 lane_path = main_folder_dir + "v3result/manual/lines/" + roadNum + ".txt"
 centroid_path = main_folder_dir + "centroidimages/" + roadNum + ".csv"
 # get the saved polygons from the image and draw the polygons on a black image
@@ -192,17 +194,40 @@ lines = load_lines_from_file(lane_path)
 test_image = cv2.imread(image_path)
 width, height = get_camera_size(roadNum)
 
+lane_id = 1
 # draw lane lines on image
 for line in lines:
+    midpoint_x = int((line[0][0] + line[1][0]) / 2)
+    midpoint_y = int((line[0][1] + line[1][1]) / 2)
+    line_id = cv2.putText(test_image,str(lane_id), (midpoint_x,midpoint_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
     line = line.reshape((-1, 1, 2)).astype(np.int32)
     cv2.polylines(test_image, [line], isClosed=False, color=(255, 0, 0), thickness=2)
+    lane_id+=1
 
 centroids = get_vehicles_from_csv(centroid_path)
-for centroid in centroids:
-    cv2.circle(test_image, centroid, 5, (0, 200, 0), -1)
-    centroid_line_assignment, projection = line_assignment_by_perpendicular_distance(centroid, lines)
-    cv2.circle(test_image, (int(projection[0]), int(projection[1])), 5, (0, 0, 255), -1)
 
+result_dict = {}
+
+for centroid in centroids:
+    cv2.circle(test_image, (centroid[0], centroid[1]), 5, (0, 200, 0), -1)
+    centroid_line_assignment, projection = line_assignment_by_perpendicular_distance((centroid[0], centroid[1]), lines)
+    cv2.circle(test_image, (int(projection[0]), int(projection[1])), 5, (0, 0, 255), -1)
+    grouping = result_dict.get(centroid_line_assignment)
+    if grouping is None:
+        grouping = [centroid]
+    else:
+        grouping.append(centroid)
+    result_dict.update({centroid_line_assignment: grouping})
+
+# Convert NumPy arrays to lists
+for key in result_dict:
+    result_dict[key] = [arr.tolist() for arr in result_dict[key]]
+
+# Now serialize to JSON
+json_data = json.dumps(result_dict)
+
+# Print or save the JSON data
+print(json_data)
 
 cv2.namedWindow("lines", cv2.WINDOW_NORMAL)
 screen_width, screen_height = get_screen_size()
