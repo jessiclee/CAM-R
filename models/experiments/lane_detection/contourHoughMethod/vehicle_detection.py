@@ -51,7 +51,7 @@ def save_csv(camera_id, file_path, centroids_and_box, class_indx):
     df["class"] = class_indx
 
     # Save to CSV
-    df.to_csv(file_path + camera_id + ".csv", index=False)
+    df.to_csv(file_path + "results/"+ camera_id + ".csv", index=False)
 
 def calc_centroids(xy_array):
     print("xy array is " + str(len(xy_array)))
@@ -79,10 +79,11 @@ def apply_yolo_nas_l():
     for filename in os.listdir("."):
         if filename.endswith(".jpg") or filename.endswith(".png"):  # Adjust based on your image file types
             camera_id, extension = os.path.splitext(filename)
+            camera_id = camera_id.split('_')[0]
             xy_array = []
             image_path = os.path.join(".", filename)
             image = Image.open(image_path)
-            filtered_image = yolo_nas_l.predict(image, conf=0.5)
+            filtered_image = yolo_nas_l.predict(image, conf=0.3)
             # print(filtered_image)
             filtered_detections = []
             bboxes = []
