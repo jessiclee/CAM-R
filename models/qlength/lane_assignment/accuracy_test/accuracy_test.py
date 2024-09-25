@@ -78,6 +78,6 @@ prediction_folder = 'predictions'
 ground_truth_files = [os.path.join(ground_truth_folder, f) for f in os.listdir(ground_truth_folder) if f.endswith('.json')]
 prediction_files = [os.path.join(prediction_folder, f) for f in os.listdir(prediction_folder) if f.endswith('.json')]
 
-output_csv_file = 'comparison_output.csv'
+output_csv_file = 'lane_assignment_accuracy_results.csv'
 
 process_multiple_comparisons(ground_truth_files, prediction_files, output_csv_file)
