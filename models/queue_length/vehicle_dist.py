@@ -433,4 +433,140 @@ queue_list = process_bboxes_normalized(yolo_bboxes, vehicle_properties, image)
 queue_length = len(queue_list)
 print(f"queue_length: {queue_length}")
 
+#############################################################################################################################
+import cv2
 
+def draw_centroids(image, centroids, vehicle_class):
+    """
+    Draws the centroid of the vehicle on the image.
+
+    Args:
+        image (numpy array): The image on which to draw.
+        centroids (list): List containing x and y coordinates of the centroids.
+        vehicle_class (str): The class of the vehicle.
+    """
+    img_height, img_width = image.shape[:2]  # Get image dimensions
+
+    # Convert normalized coordinates to pixel values
+    for centroid in centroids:
+        x = int(centroid[0])  # x-coordinate (already in pixels)
+        y = int(centroid[1])  # y-coordinate (already in pixels)
+
+        # Draw a circle at the centroid
+        cv2.circle(image, (x, y), radius=5, color=(0, 255, 0), thickness=-1)
+        cv2.putText(image, str(vehicle_class), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+
+    return image
+
+
+def process_centroids_with_queue(data, vehicle_properties, image):
+    """
+    Process centroids of vehicles, calculate queue lengths, and draw centroids on the image.
+    
+    Args:
+        data (dict): Dictionary containing lane id as key and list of vehicle centroids as value.
+        vehicle_properties (dict): Dictionary of vehicle properties (length, safe distance ratio).
+        image (numpy array): The image on which to draw.
+    
+    Returns:
+        numpy array: The image with vehicle centroids drawn.
+        int: The calculated queue length.
+    """
+    all_centroids = []
+
+    # Extract centroids and vehicle classes from the input data
+    for lane_id, vehicle_data in data.items():
+        for vehicle_info in vehicle_data:
+            centroid_x, centroid_y, vehicle_class = vehicle_info
+            all_centroids.append({"x": centroid_x, "y": centroid_y, "class": vehicle_class})
+
+    # Sort vehicles by their vertical position (y-coordinate)
+    all_centroids = sorted(all_centroids, key=lambda m: m["y"])
+
+    curr_queue_list = []
+    next_vehicle_point_y = 0
+
+    for i, centroid in enumerate(all_centroids):
+        vehicle_class = centroid["class"]
+        vehicle_height = vehicle_properties[vehicle_class]
+        min_pixel_dist = vehicle_height * 100  # Assume vehicle height is normalized, convert to pixel distance
+        
+        # Calculate the next vehicle's allowable position (Y-axis)
+        next_vehicle_point_y = centroid["y"] + min_pixel_dist
+
+        # Add the current centroid to the queue
+        curr_queue_list.append(centroid)
+
+        # Draw the centroid on the image
+        image = draw_centroids(image, [(centroid["x"], centroid["y"])], vehicle_class)
+
+    # Process the queue based on spacing between vehicles
+    final_queue_list = []
+    for i, centroid in enumerate(all_centroids):
+        if next_vehicle_point_y > 0 and (centroid["y"]) > next_vehicle_point_y:
+            break
+
+        # Add vehicle to the queue list
+        final_queue_list.append(centroid)
+
+    queue_length = len(final_queue_list)
+    
+    return image, queue_length
+
+
+def read_vehicle_data(file_path):
+    """
+    Reads vehicle centroids and classes from a given file.
+    
+    Args:
+        file_path (str): Path to the file containing vehicle data.
+    
+    Returns:
+        dict: A dictionary containing lane ids as keys and list of vehicle info as values.
+    """
+    vehicle_data = {}
+    
+    with open(file_path, 'r') as file:
+        for line in file:
+            parts = line.strip().split()  # Split the line into components
+            if len(parts) == 5:  # Ensure there are 5 parts (lane_id, x, y, class)
+                lane_id = int(parts[0])  # Convert lane_id to integer
+                x = int(parts[1])  # Convert x to integer (pixels)
+                y = int(parts[2])  # Convert y to integer (pixels)
+                vehicle_class = int(parts[3])  # Convert class to integer
+                
+                # Append the vehicle data to the lane's list
+                if lane_id not in vehicle_data:
+                    vehicle_data[lane_id] = []
+                vehicle_data[lane_id].append([x, y, vehicle_class])
+    
+    return vehicle_data
+
+
+# Define vehicle properties (length or safe distance ratio)
+vehicle_properties = {
+    3: 3.0,  # Example values, you can adjust these based on real-world data
+    4: 2.0,
+    6: 2.1,
+    8: 1.7,
+}
+
+# Load vehicle data
+vehicle_data = read_vehicle_data('C:\\Users\\jesle\\Desktop\\fyp\\actual_data\\queue_length_test\\4704_01-06-2024_18-25-02.txt')
+
+# Load the image
+image = cv2.imread('C:\\Users\\jesle\\Desktop\\fyp\\actual_data\\queue_length_test\\4704_01-06-2024_18-25-02.jpg')
+
+# Loop through each lane and calculate queue length
+for lane_id, vehicle_data_lane in vehicle_data.items():
+    # Create a temporary data structure for a single lane
+    lane_data = {lane_id: vehicle_data_lane}
+
+    # Process the centroids for the lane
+    output_image, queue_length = process_centroids_with_queue(lane_data, vehicle_properties, image)
+
+    # Print the queue length for the current lane
+    print(f"Lane {lane_id}: Queue length = {queue_length}")
+
+# Save the output image
+cv2.imwrite("output_image_with_queues.jpg", output_image)
