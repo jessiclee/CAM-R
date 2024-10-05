@@ -18,6 +18,7 @@ from super_gradients.training import models
 import cv2
 import json
 import tkinter as tk
+import math
 
 ##############################################################################
 ########################### VARIABLES ########################################
@@ -25,10 +26,10 @@ import tkinter as tk
 
 #Define vehicle properties 
 vehicle_properties = {
-    3: 0.5, 
-    1: 0.5,
-    0: 0.5,
-    4: 0.5,
+    3: 1, 
+    1: 1,
+    2: 1,
+    4: 1,
 }
 
 queue_threshold = 1.5
@@ -273,18 +274,7 @@ def draw_queue(image, queue):
     return image
 
 def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshold):
-    """
-    Processes a list of bounding boxes in a single lane, groups them into queues, 
-    and draws the bounding boxes on the image with annotated distances.
     
-    Args:
-        bboxes (list): List of bounding boxes in the format [cx, cy, x1, y1, x2, y2, class_id].
-        image (numpy array): The image to draw on.
-        vehicle_properties (dict): A dictionary with vehicle class_id as key and property (e.g., length ratio) as value.
-    
-    Returns:
-        list: A list of queue lists, where each queue list contains the bounding boxes in that queue.
-    """
     output_image = image
 
     # Sort the bounding boxes by their centroid's y-coordinate (cy)
@@ -295,12 +285,17 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshol
 
     # Start the first queue list with the first bounding box
     queue_list = [bboxes[0]]
-    prev_ymax = bboxes[0]["y2"]  # Initial ymax from the first bbox
+    prev_y = bboxes[0]["cy"] 
+    prev_x = bboxes[0]["cx"] 
     output_image = draw_bbox_with_annotation(output_image, bboxes[0], 0)
-
+    print("new lane")
     # Loop through remaining bounding boxes
     for i in range(1, len(bboxes)):
+        print ('1' )
+        print (prev_y )
+        
         bbox = bboxes[i]
+        print(bbox["cy"])
         print('queue_list')
         print(queue_list)
         # Calculate the height of the current bounding box
@@ -313,8 +308,10 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshol
         # Calculate the threshold value
         threshold_value = bbox_height * vehicle_property
         
-        # Calculate the distance between the ymin of the current bbox and the ymax of the previous bbox
-        dist = bbox["y1"] - prev_ymax
+        # Calculate the distance between the current bbox and the previous bbox
+        dist = math.sqrt((bbox["cx"] - prev_x) ** 2 + (bbox["cy"] - prev_y) ** 2)
+        print('dist:')
+        print(dist)
         
         # Draw the current bounding box and annotate the distance
         output_image = draw_bbox_with_annotation(output_image, bbox, dist)
@@ -326,15 +323,15 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshol
             queue_lists.append(queue_list)
             queue_list = [bbox]
             
-        
         # Update prev_ymax to the current bbox's ymax
-        prev_ymax = bbox["y2"]
+        prev_y = bbox["cy"]
+        prev_x = bbox["cx"]
     
         # Append the last queue list if it's not already added
     if queue_list:
         queue_lists.append(queue_list)
-    print('queue_lists')
-    print(queue_lists)
+    """ print('queue_lists')
+    print(queue_lists) """
     
     longest_queue_index = max(range(len(queue_lists)), key=lambda i: len(queue_lists[i]))
     combined_queue = queue_lists[longest_queue_index]
@@ -345,7 +342,8 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshol
         for i in range(longest_queue_index, 0, -1) :
             current  = queue_lists[i][0]
             ahead = queue_lists[i-1][-1]
-            if current["y1"] - ahead["y2"] < queue_threshold:
+            dist = math.sqrt((current["cx"] - ahead["cx"]) ** 2 + (current["cy"] - ahead["cy"]) ** 2)
+            if dist < queue_threshold:
                 combined_queue = queue_lists[i-1] + combined_queue
             else:
                 break
@@ -353,7 +351,8 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshol
         for i in range(longest_queue_index, len(queue_lists) - 1) :
             current  = queue_lists[i][-1]
             behind = queue_lists[i+1][0]
-            if behind["y1"] - current["y2"] < queue_threshold:
+            dist = math.sqrt((behind["cx"] - current["cx"]) ** 2 + (behind["cy"] - current["cy"]) ** 2)
+            if dist < queue_threshold:
                 combined_queue = combined_queue + queue_lists[i+1]
             else:
                 break
