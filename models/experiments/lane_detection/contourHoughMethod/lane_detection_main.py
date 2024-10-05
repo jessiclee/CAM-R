@@ -430,7 +430,7 @@ def on_mouse(event, x, y, buttons, user_param):
 
 def draw_lane_id(image, lane_id, x, y):
     font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(image, f"{lane_id}", (x, y), font, 1, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(image, f"{lane_id}", (x, y), font, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
 
 def get_camera_size(camid):
     camera_id = int(camid)
@@ -464,7 +464,8 @@ is_hd = True
 if img_width == 240:
     is_hd = False
 
-lines = pipeline(roadNum, is_hd, main_folder_dir)
+# lines = pipeline(roadNum, is_hd, main_folder_dir)
+lines = load_lines_from_file("C:/Users/Zhiyi/Desktop/FYP/newtraffic/v3result/manual/lines/" + roadNum + ".txt")
 
 cv2.namedWindow("image", cv2.WINDOW_NORMAL)
 screen_width, screen_height = get_screen_size()
