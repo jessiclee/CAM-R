@@ -73,16 +73,19 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image):
             queue_list.append(bbox)
         else:
             queue_lists.append(queue_list)
+            print('running')
+            print(queue_lists)
             queue_list = [bbox]
             
         
         # Update prev_ymax to the current bbox's ymax
         prev_ymax = bbox["y2"]
-        print(queue_lists)
+        
     
         # Append the last queue list if it's not already added
     if queue_list:
         queue_lists.append(queue_list)
+    print(queue_lists)
 
     longest_queue_index = max(range(len(queue_lists)), key=lambda i: len(queue_lists[i]))
     combined_queue = queue_lists[longest_queue_index]
@@ -189,7 +192,7 @@ vehicle_properties = {
 lane_data = read_bboxes('C:\\Users\\jesle\\Desktop\\fyp\\actual_data\\queue_length_test\\now.txt')
 
 # Load the image
-image = cv2.imread('C:\\Users\\jesle\\Desktop\\fyp\\actual_data\\queue_length_test\\9702_01-06-2024_13-05-02.jpg')
+image = cv2.imread('C:\\Users\\jesle\\Desktop\\fyp\\actual_data\\queue_length_test\\now.jpg')
 
 #Output queue length for each lane
 queue_lengths= compute_queue_lengths(lane_data, image, vehicle_properties)

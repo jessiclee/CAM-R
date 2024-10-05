@@ -25,18 +25,20 @@ import tkinter as tk
 
 #Define vehicle properties 
 vehicle_properties = {
-    3: 2.0, 
-    1: 2.0,
-    0: 2.1,
-    4: 1.7,
+    3: 1.0, 
+    1: 1.0,
+    0: 1.1,
+    4: 0.7,
 }
+
+queue_threshold = 1.5
 
 # Remove all Logger notifications
 logger = logging.getLogger()
 logger.setLevel(logging.CRITICAL)
 
 # Setting up YOLO NAS model
-yolo_nas_l = models.get('yolo_nas_s', num_classes=4, checkpoint_path="C:/Users/Zhiyi/Desktop/FYP/CAM-R/models/experiments/lane_detection/contourHoughMethod/19.pth")
+yolo_nas_l = models.get('yolo_nas_s', num_classes=4, checkpoint_path="C:/Users/Jesle/Desktop/fyp/19.pth")
 
 camera_sizes = {
     "small": {
@@ -264,7 +266,13 @@ def draw_bbox_with_annotation(image, bbox, dist):
     cv2.putText(image, f"Dist: {dist:.2f}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
     return image
 
-def queue_length_top_to_bottom(bboxes, vehicle_properties, image):
+def draw_queue(image, queue):
+    for bbox in queue:
+        x1, y1, x2, y2 = int(bbox["x1"]), int(bbox["y1"]), int(bbox["x2"]), int(bbox["y2"])
+        cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 255), 2)
+    return image
+
+def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshold):
     """
     Processes a list of bounding boxes in a single lane, groups them into queues, 
     and draws the bounding boxes on the image with annotated distances.
@@ -293,6 +301,7 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image):
     # Loop through remaining bounding boxes
     for i in range(1, len(bboxes)):
         bbox = bboxes[i]
+        print('queue_list')
         print(queue_list)
         # Calculate the height of the current bounding box
         bbox_height = bbox["y2"] - bbox["y1"]
@@ -320,23 +329,23 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image):
         
         # Update prev_ymax to the current bbox's ymax
         prev_ymax = bbox["y2"]
-        print(queue_lists)
     
         # Append the last queue list if it's not already added
     if queue_list:
         queue_lists.append(queue_list)
+    print('queue_lists')
+    print(queue_lists)
     
     longest_queue_index = max(range(len(queue_lists)), key=lambda i: len(queue_lists[i]))
     combined_queue = queue_lists[longest_queue_index]
 
-    
     if len(combined_queue) <= 1:
         return combined_queue
     else:
         for i in range(longest_queue_index, 0, -1) :
             current  = queue_lists[i][0]
             ahead = queue_lists[i-1][-1]
-            if current["y1"] - ahead["y2"] < another_threshold:
+            if current["y1"] - ahead["y2"] < queue_threshold:
                 combined_queue = queue_lists[i-1] + combined_queue
             else:
                 break
@@ -344,13 +353,14 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image):
         for i in range(longest_queue_index, len(queue_lists) - 1) :
             current  = queue_lists[i][-1]
             behind = queue_lists[i+1][0]
-            if behind["y1"] - current["y2"] < another_threshold:
+            if behind["y1"] - current["y2"] < queue_threshold:
                 combined_queue = combined_queue + queue_lists[i+1]
             else:
                 break
         #  save the output image
-    cv2.imwrite("output_image.jpg", output_image)  
-
+    
+    output_image = draw_queue(output_image, combined_queue)
+    cv2.imwrite("output_image.jpg", output_image) 
     return combined_queue
 
 def read_bboxes(lanes_dict):
@@ -380,26 +390,26 @@ def read_bboxes(lanes_dict):
     
     return lanes_dict  # Return the dictionary of lanes
 
-def compute_queue_lengths(lane_data, image, vehicle_properties, direction='up'):
+def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold, direction='up'):
     queue_lengths = {}
-    
+   
     # Process each lane's bounding boxes
     for lane_id, lane_bboxes in lane_data.items():
+        queue_list = []
+        print(direction)
         # Determine the queue based on the direction
         if direction == "up":
-            queue_list = queue_length_top_to_bottom(lane_bboxes, vehicle_properties, image)
+            queue_list = queue_length_top_to_bottom(lane_bboxes, vehicle_properties, image, queue_threshold)
+            print('queue_list')
         """ elif direction == "down":
-            queue_list = queue_length_bottom_to_top(lane_bboxes, vehicle_properties, image)
+            queue_list = queue_length_bottom_to_top(lane_bboxes, vehicle_properties, image, queue_threshold)
         elif direction == "left":
-            queue_list = queue_length_left_to_right(lane_bboxes, vehicle_properties, image)
+            queue_list = queue_length_left_to_right(lane_bboxes, vehicle_properties, image, queue_threshold)
         elif direction == "right":
-            queue_list = queue_length_right_to_left(lane_bboxes, vehicle_properties, image)
+            queue_list = queue_length_right_to_left(lane_bboxes, vehicle_properties, image, queue_threshold)
         """
-        # Calculate queue length for the current lane
-        queue_length = len(queue_list)
-        
         # Store lane_id and queue length in the dictionary
-        queue_lengths[lane_id] = queue_length 
+        queue_lengths[lane_id] = len(queue_list) 
     
     return queue_lengths
 
@@ -411,14 +421,13 @@ def compute_queue_lengths(lane_data, image, vehicle_properties, direction='up'):
 roadNum = input("Enter road ID: ")
 
 # directory paths
-main_folder_dir = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/"
+main_folder_dir = "C:/Users/jesle/Desktop/fyp/newtraffic/"
 
 image_path = main_folder_dir + "centroidimages/" + roadNum + ".jpg"
 test_image = cv2.imread(image_path)
 
 lane_path = main_folder_dir + "v3result/manual2/lines/" + roadNum + ".txt"
 lines = load_lines_from_file(lane_path)
-
 width, height = get_camera_size(roadNum)
 
 # draw lane lines on image
@@ -469,5 +478,5 @@ for centroid in centroids:
 #Load labels
 lane_data = read_bboxes(result_dict)
 #Output queue length for each lane
-queue_lengths= compute_queue_lengths(lane_data, test_image, vehicle_properties)
+queue_lengths= compute_queue_lengths(lane_data, test_image, vehicle_properties, queue_threshold)
 print(queue_lengths)
