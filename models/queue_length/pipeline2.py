@@ -39,7 +39,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.CRITICAL)
 
 # Setting up YOLO NAS model
-yolo_nas_l = models.get('yolo_nas_s', num_classes=4, checkpoint_path="C:/Users/Jesle/Desktop/fyp/19.pth")
+yolo_nas_l = models.get('yolo_nas_s', num_classes=4, checkpoint_path="C:/Users/User/fyp/direction/19.pth")
 
 camera_sizes = {
     "small": {
@@ -389,15 +389,16 @@ def read_bboxes(lanes_dict):
     
     return lanes_dict  # Return the dictionary of lanes
 
-def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold, direction='up'):
+def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold, direction):
     queue_lengths = {}
    
     # Process each lane's bounding boxes
     for lane_id, lane_bboxes in lane_data.items():
         queue_list = []
-        print(direction)
+        # print("dir, lane", direction[lane_id-1], lane_id)
+        dir = direction[lane_id-1]
         # Determine the queue based on the direction
-        if direction == "up":
+        if dir == "up":
             queue_list = queue_length_top_to_bottom(lane_bboxes, vehicle_properties, image, queue_threshold)
             print('queue_list')
         """ elif direction == "down":
@@ -420,7 +421,11 @@ def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold,
 roadNum = input("Enter road ID: ")
 
 # directory paths
-main_folder_dir = "C:/Users/jesle/Desktop/fyp/newtraffic/"
+main_folder_dir = "C:/Users/User/fyp/newtraffic/"
+
+loaded_road_directions = {}
+with open('C:/Users/User/fyp/CAM-R/models/queue_length/lane_directions.json', 'r') as file:
+    loaded_road_directions = json.load(file)
 
 image_path = main_folder_dir + "centroidimages/" + roadNum + ".jpg"
 test_image = cv2.imread(image_path)
@@ -477,5 +482,5 @@ for centroid in centroids:
 #Load labels
 lane_data = read_bboxes(result_dict)
 #Output queue length for each lane
-queue_lengths= compute_queue_lengths(lane_data, test_image, vehicle_properties, queue_threshold)
+queue_lengths= compute_queue_lengths(lane_data, test_image, vehicle_properties, queue_threshold, loaded_road_directions.get(str(roadNum)))
 print(queue_lengths)
