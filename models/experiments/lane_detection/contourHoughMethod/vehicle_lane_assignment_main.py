@@ -86,10 +86,15 @@ def load_lines_from_file(file_path):
 
 def get_vehicles_from_df(df):
     # get the centroid csv of the road
-    x = df['cen_x'].values
-    y = df['cen_y'].values
-    classes = df['class'].values
-    data = np.array(list(zip(x, y, classes)))
+    x = df['cen_x'].values.astype(int)
+    y = df['cen_y'].values.astype(int)
+    xmin = df['xmin'].values.astype(int)
+    ymin = df['ymin'].values.astype(int)
+    xmax = df['xmax'].values.astype(int)
+    ymax = df['ymax'].values.astype(int)
+    classes = df['class'].values.astype(int)  # assuming classes should also be integers
+
+    data = np.array(list(zip(x, y, xmin, ymin, xmax, ymax, classes)))
     return data
 
 def point_to_segment_distance_with_projection(point, segment_start, segment_end):
@@ -280,12 +285,13 @@ color_dict = {
 
 for centroid in centroids:
     coord = (centroid[0], centroid[1])
+    print(centroid)
     cv2.circle(test_image, coord, 5, (0, 200, 0), -1)
     # This prints out the coordinates of the centroids on the image
     cv2.putText(test_image,"(" + str(centroid[0]) +", " + str(centroid[1]) +")", (centroid[0] + 4, centroid[1] + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
     centroid_line_assignment, projection, isValid = line_assignment_by_perpendicular_distance(coord, lines)
     if isValid is True:
-        cv2.circle(test_image, (int(projection[0]), int(projection[1])), 5, color_dict.get(centroid[2]), -1)
+        cv2.circle(test_image, (int(projection[0]), int(projection[1])), 5, color_dict.get(centroid[6]), -1)
         grouping = result_dict.get(centroid_line_assignment)
         if grouping is None:
             grouping = [centroid]

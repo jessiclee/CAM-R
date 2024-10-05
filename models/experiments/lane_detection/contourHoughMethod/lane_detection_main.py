@@ -44,12 +44,13 @@ main_folder_dir = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/"
 
 done = False
 points = []
-lines = []  # List to store all polygons (detected and newly drawn)
+lines = []  # List to store all lines (detected and newly drawn)
+id_dict = {}
 current = (0, 0)
 line_selected = -1  # Store the index of the polygon to delete
 delete_mode = False     # Set to True when 'b' key is pressed
 drawing_mode = True     # True when drawing a new polygon
-
+id_mode = False
 ##############################################################################
 ########################### FUNCTIONS ########################################
 ##############################################################################
@@ -352,9 +353,24 @@ def load_lines_from_file(file_path):
             lines.append(np.array(points, dtype=np.float32))
     return lines
 
+def get_lane_id():
+    lane_id = ""
+    while True:
+        key = cv2.waitKey(0)  # Wait for keypress
+        if ord('0') <= key <= ord('9'):  # If the key is a digit (0-9)
+            lane_id += chr(key)  # Accumulate the digit
+            print(f"Current lane ID: {lane_id}")
+        elif key == 13:  # If 'Enter' is pressed (keycode 13)
+            print(f"Final lane ID: {lane_id}")
+            return lane_id  # Return the accumulated lane ID
+        elif key == 27:  # If 'Esc' is pressed (keycode 27)
+            print("Lane ID input canceled.")
+            return None
+        
+
 # Function to define what happens for every user input
 def on_mouse(event, x, y, buttons, user_param):
-    global done, points, current, temp, lines, line_selected, delete_mode, drawing_mode
+    global done, points, current, temp, lines, line_selected, delete_mode, drawing_mode, id_mode, id_dict
 
     if delete_mode and event == cv2.EVENT_LBUTTONDOWN:
         # Check if clicked inside any polygon
@@ -399,18 +415,22 @@ def on_mouse(event, x, y, buttons, user_param):
                 temp = img.copy()
             else:
                 print("Need at least 2 points to complete a line")
-
-    # # saving lines to relevant folders
-    # save_lines_to_file(line_points,  main_folder_dir + "v3result/autolines/" + roadNum + '.txt')
-
-    # # saving image result to relevant folders
-    # if is_hd == False:
-    #     cv2.imwrite( main_folder_dir + "v3result/low_road/" + roadNum + ".jpg", road)
-    # else:
-    #     cv2.imwrite( main_folder_dir + "v3result/" + roadNum + ".jpg", road)
     
-    # print("saved " + roadNum + " results to folder!")
-    
+    if id_mode and event == cv2.EVENT_LBUTTONDOWN:
+        lane_id = get_lane_id()  # Get the full lane ID (multi-digit)
+        if lane_id:  # Convert the key code to a character (number)
+            for i, line in enumerate(lines):
+                if pointLineTest(line, (x, y)):
+                    print(f"Line ID {lane_id} assigned.")
+                    line_selected = i
+                    id_dict.update({lane_id : i})
+                    print(id_dict)
+                    draw_lane_id(final_img, lane_id, x, y) 
+                    break
+
+def draw_lane_id(image, lane_id, x, y):
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(image, f"{lane_id}", (x, y), font, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
 def get_camera_size(camid):
     camera_id = int(camid)
@@ -471,6 +491,10 @@ while True:
     key = cv2.waitKey(50) & 0xFF
     if key == ord('d'):  # Press 'd' when done with all polygons
         print("Finalizing lines...")
+        show_popup("Assign Lane IDs")
+        id_mode = True
+        drawing_mode = False
+        delete_mode = False
         break
 
     elif key == ord('n'):  # Press 'n' to start a new polygon
@@ -505,13 +529,28 @@ for line in lines:
     line = line.reshape((-1, 1, 2)).astype(np.int32)
     cv2.polylines(final_img, [line], isClosed=False, color=(255, 0, 0), thickness=2)
 
+while True:
+    # Update the window
+    cv2.imshow("image", final_img)
+
+    # Check for user input
+    key = cv2.waitKey(50) & 0xFF
+    if key == ord('f'):  # Press 'f' when done with all id assignment
+        print("Finalizing line ids...")
+        break
+
 # Show final image
 cv2.imshow("Line Drawer", final_img)
 cv2.waitKey(0)
 
+final_id_lines = []
+sorted_keys = sorted(id_dict.keys(), key=int) 
+for key in sorted_keys:
+    line = id_dict[key]
+    final_id_lines.append(lines[line])
 # Save the image with lines
-cv2.imwrite(main_folder_dir + "v3result/manual/mask-" + os.path.basename(path), final_img)
-save_lines_to_file(lines,  main_folder_dir + "v3result/manual/lines/" + roadNum + '.txt')
+cv2.imwrite(main_folder_dir + "v3result/manual2/mask-" + os.path.basename(path), final_img)
+save_lines_to_file(final_id_lines,  main_folder_dir + "v3result/manual2/lines/" + roadNum + '.txt')
 cv2.destroyAllWindows()
 
 
