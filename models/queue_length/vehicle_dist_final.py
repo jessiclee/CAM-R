@@ -84,17 +84,27 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image):
     if queue_list:
         queue_lists.append(queue_list)
 
-    # Initialize combined_queue as the longest queue
-    combined_queue = max(queue_lists, key=len) if queue_lists else []
+    longest_queue_index = max(range(len(queue_lists)), key=lambda i: len(queue_lists[i]))
+    combined_queue = queue_lists[longest_queue_index]
 
-    # Combine the two longest queue lists with at least 2 cars
-    qualifying_queues = [q for q in queue_lists if len(q) >= 2]  # Filter queues with at least 2 cars
-    if len(qualifying_queues) > 1:
-        # Sort the qualifying queues by their lengths in descending order
-        qualifying_queues.sort(key=len, reverse=True)
-        # Combine the two longest qualifying lists
-        combined_queue = qualifying_queues[0] + qualifying_queues[1]
-
+    if len(combined_queue) <= 1:
+        return combined_queue
+    else:
+        for i in range(longest_queue_index, 0, -1) :
+            current  = queue_lists[i][0]
+            ahead = queue_lists[i-1][-1]
+            if current["y1"] - ahead["y2"] < another_threshold:
+                combined_queue = queue_lists[i-1] + combined_queue
+            else:
+                break
+        
+        for i in range(longest_queue_index, len(queue_lists) - 1) :
+            current  = queue_lists[i][-1]
+            behind = queue_lists[i+1][0]
+            if behind["y1"] - current["y2"] < another_threshold:
+                combined_queue = combined_queue + queue_lists[i+1]
+            else:
+                break
         #  save the output image
     cv2.imwrite("output_image.jpg", output_image)  
 
@@ -146,12 +156,12 @@ def compute_queue_lengths(lane_data, image, vehicle_properties, direction='up'):
             queue_list = queue_length_left_to_right(lane_bboxes, vehicle_properties, image)
         elif direction == "right":
             queue_list = queue_length_right_to_left(lane_bboxes, vehicle_properties, image)
-        
+        """
         # Calculate queue length for the current lane
         queue_length = len(queue_list)
         
         # Store lane_id and queue length in the dictionary
-        queue_lengths[lane_id] = queue_length """
+        queue_lengths[lane_id] = queue_length 
     
     return queue_lengths
 
@@ -163,11 +173,8 @@ json_data = {
     "2": [[170, 175, 145, 150, 195, 201, 3], [123, 56, 107, 34, 140, 77, 1], [140, 107, 123, 92, 156, 122, 3]],
     "1": [[89, 83, 77, 69, 100, 96, 3]],
     "4": [[254, 46, 237, 33, 272, 60, 3]]
-
 ]
-
 }
- 
 """
 
 #Define vehicle properties 
@@ -179,7 +186,7 @@ vehicle_properties = {
 }
 
 #Load labels
-lane_data = read_bboxes('C:\\Users\\jesle\\Desktop\\fyp\\actual_data\\queue_length_test\\trial.txt')
+lane_data = read_bboxes('C:\\Users\\jesle\\Desktop\\fyp\\actual_data\\queue_length_test\\now.txt')
 
 # Load the image
 image = cv2.imread('C:\\Users\\jesle\\Desktop\\fyp\\actual_data\\queue_length_test\\9702_01-06-2024_13-05-02.jpg')
