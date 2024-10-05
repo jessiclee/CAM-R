@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch.nn.functional as F
 import torch
+import os
 
 def train(num_epochs, device, model, criterion, optimizer, train_loader, validation_loader, num_classes):
     best_accuracy = 0
@@ -127,9 +128,12 @@ def test_model_on_test_data(device, model, test_loader):
     all_labels = []
     all_preds = []
     all_probs = []
+    
+    # Get the dataset from the test_loader
+    dataset = test_loader.dataset
 
     with torch.no_grad():
-        for images, labels in test_loader:
+        for idx, (images, labels) in enumerate(test_loader):
             images, labels = images.to(device), labels.to(device)
             outputs = model(images)
             _, predicted = torch.max(outputs, 1)
@@ -141,6 +145,11 @@ def test_model_on_test_data(device, model, test_loader):
                 label = labels[i]
                 class_correct[label] += (predicted[i] == label).item()
                 class_total[label] += 1
+                
+                # Print the filenames and their corresponding class labels
+                img_index = idx * test_loader.batch_size + i
+                filename = dataset.samples[img_index][0]  # Assuming dataset.samples stores (filename, label) tuples
+                print(f"Filename: {os.path.basename(filename)}, True class: {class_names[label]}, Predicted class: {class_names[predicted[i]]}")
 
             # Collecting labels, predictions, and probabilities for ROC and AUC
             all_labels.append(labels.cpu().numpy())
@@ -156,7 +165,7 @@ def test_model_on_test_data(device, model, test_loader):
     macro_precision = precision_score(all_labels, all_preds, average='macro', zero_division=0)
     macro_recall = recall_score(all_labels, all_preds, average='macro', zero_division=0)
 
-    # # Compute F1 score
+    # Compute F1 score
     macro_f1 = f1_score(all_labels, all_preds, average='macro', zero_division=0)
     weighted_f1 = f1_score(all_labels, all_preds, average='weighted', zero_division=0)
     
@@ -186,6 +195,7 @@ def test_model_on_test_data(device, model, test_loader):
     print(f'\nMacro-averaged Precision: {macro_precision:.4f}, Macro-averaged Recall: {macro_recall:.4f}')
     print(f'Macro-averaged F1 Score: {macro_f1:.4f}')
     print(f'Weighted F1 Score: {weighted_f1:.4f}')
+
 
 def calculate_f1_score(device, model, test_loader):
     # Set the model to evaluation mode
