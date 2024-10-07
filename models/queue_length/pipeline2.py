@@ -26,13 +26,13 @@ import math
 
 #Define vehicle properties 
 vehicle_properties = {
-    3: 1, 
-    1: 1,
-    2: 1,
-    4: 1,
+    2: 1.5, 
+    0: 1.5,
+    1: 1.5,
+    3: 1.5,
 }
 
-queue_threshold = 1.5
+queue_threshold = 3
 
 # Remove all Logger notifications
 logger = logging.getLogger()
@@ -220,15 +220,16 @@ def calc_centroids(xy_array):
 
 def apply_yolo_nas_l(image_path):
     # List of accepted labels
-    accepted_list = [1,2,3,4]  # Example labels that are accepted
+    accepted_list = [0,1,2,3]  # Example labels that are accepted
     filename = image_path
     if filename.endswith(".jpg") or filename.endswith(".png"):  # Adjust based on your image file types
-        camera_id, extension = os.path.splitext(filename)
+        camera_id, extension = os.path.splitext(os.path.basename(image_path))
         camera_id = camera_id.split('_')[0]
         xy_array = []
         image_path = os.path.join(".", filename)
         image = Image.open(image_path)
         filtered_image = yolo_nas_l.predict(image, conf=0.5)
+        filtered_image.save(f"./results/predictions_image_{camera_id}.jpg")
         bboxes = []
         class_indx = []
         conf = []
@@ -236,11 +237,11 @@ def apply_yolo_nas_l(image_path):
         labels = pred.labels.astype(int)
         for index, label in enumerate(labels):
             # print(label)
-            if label in accepted_list:
+            # if label in accepted_list:
                 # print(pred.bboxes_xyxy[index])
-                bboxes.append(pred.bboxes_xyxy[index])
-                class_indx.append(label)
-                conf.append(pred.confidence.astype(float)[index])
+            bboxes.append(pred.bboxes_xyxy[index])
+            class_indx.append(label)
+            conf.append(pred.confidence.astype(float)[index])
             
         # Update the filtered image with filtered detections
         xy_array.append(np.array(bboxes))
@@ -273,7 +274,7 @@ def draw_queue(image, queue):
         cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 255), 2)
     return image
 
-def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshold):
+def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshold, img_name):
     
     output_image = image
 
@@ -359,7 +360,8 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshol
         #  save the output image
     
     output_image = draw_queue(output_image, combined_queue)
-    cv2.imwrite("output_image.jpg", output_image) 
+    cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+    print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
     return combined_queue
 
 def read_bboxes(lanes_dict):
@@ -389,17 +391,19 @@ def read_bboxes(lanes_dict):
     
     return lanes_dict  # Return the dictionary of lanes
 
-def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold, direction):
+def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold, direction, img_name):
     queue_lengths = {}
+    print(f"FUNCTION ENTERED FOR: {img_name}")
    
     # Process each lane's bounding boxes
     for lane_id, lane_bboxes in lane_data.items():
         queue_list = []
         # print("dir, lane", direction[lane_id-1], lane_id)
-        dir = direction[lane_id-1]
+        # dir = direction[lane_id-1]
+        dir = "up"
         # Determine the queue based on the direction
         if dir == "up":
-            queue_list = queue_length_top_to_bottom(lane_bboxes, vehicle_properties, image, queue_threshold)
+            queue_list = queue_length_top_to_bottom(lane_bboxes, vehicle_properties, image, queue_threshold, (img_name +"----"+ str(lane_id)))
             print('queue_list')
         """ elif direction == "down":
             queue_list = queue_length_bottom_to_top(lane_bboxes, vehicle_properties, image, queue_threshold)
@@ -418,7 +422,7 @@ def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold,
 ##############################################################################
 
 # input road
-roadNum = input("Enter road ID: ")
+# roadNum = input("Enter road ID: ")
 
 # directory paths
 main_folder_dir = "C:/Users/User/fyp/newtraffic/"
@@ -427,60 +431,67 @@ loaded_road_directions = {}
 with open('C:/Users/User/fyp/CAM-R/models/queue_length/lane_directions.json', 'r') as file:
     loaded_road_directions = json.load(file)
 
-image_path = main_folder_dir + "centroidimages/" + roadNum + ".jpg"
-test_image = cv2.imread(image_path)
+# image_path = main_folder_dir + "centroidimages/" + roadNum + ".jpg"
+images = os.listdir( main_folder_dir + "centroidimages/")
+for imge in images:
+    if (imge.endswith(".jpg")):
+        image_path = main_folder_dir + "centroidimages/" + imge
+        roadNum = os.path.splitext(os.path.basename(image_path))[0].split('_')[0]
+        print(roadNum)
+        print(image_path)
+        test_image = cv2.imread(image_path)
 
-lane_path = main_folder_dir + "v3result/manual2/lines/" + roadNum + ".txt"
-lines = load_lines_from_file(lane_path)
-width, height = get_camera_size(roadNum)
+        lane_path = main_folder_dir + "v3result/manual2/lines/" + roadNum + ".txt"
+        lines = load_lines_from_file(lane_path)
+        width, height = get_camera_size(roadNum)
 
-# draw lane lines on image
-lane_id = 1
-for line in lines:
-    midpoint_x = int((line[0][0] + line[1][0]) / 2)
-    midpoint_y = int((line[0][1] + line[1][1]) / 2)
-    cv2.putText(test_image,str(lane_id), (midpoint_x,midpoint_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-    line = line.reshape((-1, 1, 2)).astype(np.int32)
-    cv2.polylines(test_image, [line], isClosed=False, color=(255, 0, 0), thickness=2)
-    lane_id += 1
+        # draw lane lines on image
+        lane_id = 1
+        for line in lines:
+            midpoint_x = int((line[0][0] + line[1][0]) / 2)
+            midpoint_y = int((line[0][1] + line[1][1]) / 2)
+            cv2.putText(test_image,str(lane_id), (midpoint_x,midpoint_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+            line = line.reshape((-1, 1, 2)).astype(np.int32)
+            cv2.polylines(test_image, [line], isClosed=False, color=(255, 0, 0), thickness=2)
+            lane_id += 1
 
-df = apply_yolo_nas_l(image_path)
-centroids = get_vehicles_from_df(df)
+        df = apply_yolo_nas_l(image_path)
+        centroids = get_vehicles_from_df(df)
 
-result_dict = {}
+        result_dict = {}
 
-# You can change the colors to ur liking 
-color_dict = {
-    1: (0, 0, 255), # red = truck
-    2: (255, 0, 255), # pink = motorcycle
-    3: (255,182,193), # grey ish = car
-    4: (255, 255, 0) # neon blue = bus
-}
+        # You can change the colors to ur liking 
+        color_dict = {
+            1: (0, 0, 255), # red = truck
+            2: (255, 0, 255), # pink = motorcycle
+            3: (255,182,193), # grey ish = car
+            4: (255, 255, 0) # neon blue = bus
+        }
 
-for centroid in centroids:
-    coord = (centroid[0], centroid[1])
-    cv2.circle(test_image, coord, 5, (0, 200, 0), -1)
-    # This prints out the coordinates of the centroids on the image
-    cv2.putText(test_image,"(" + str(centroid[0]) +", " + str(centroid[1]) +")", (centroid[0] + 4, centroid[1] + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-    centroid_line_assignment, projection, isValid = line_assignment_by_perpendicular_distance(coord, lines)
-    if isValid is True:
-        cv2.circle(test_image, (int(projection[0]), int(projection[1])), 5, color_dict.get(centroid[6]), -1)
-        grouping = result_dict.get(centroid_line_assignment)
-        if grouping is None:
-            grouping = [centroid]
-        else:
-            grouping.append(centroid)
-        result_dict.update({centroid_line_assignment: grouping})
-    else:
-        cv2.circle(test_image, coord, 3, (0,0,0), -1)
+        for centroid in centroids:
+            coord = (centroid[0], centroid[1])
+            cv2.circle(test_image, coord, 5, (0, 200, 0), -1)
+            # This prints out the coordinates of the centroids on the image
+            cv2.putText(test_image,"(" + str(centroid[0]) +", " + str(centroid[1]) +")", (centroid[0] + 4, centroid[1] + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+            centroid_line_assignment, projection, isValid = line_assignment_by_perpendicular_distance(coord, lines)
+            if isValid is True:
+                cv2.circle(test_image, (int(projection[0]), int(projection[1])), 5, color_dict.get(centroid[6]), -1)
+                grouping = result_dict.get(centroid_line_assignment)
+                if grouping is None:
+                    grouping = [centroid]
+                else:
+                    grouping.append(centroid)
+                result_dict.update({centroid_line_assignment: grouping})
+            else:
+                cv2.circle(test_image, coord, 3, (0,0,0), -1)
 
-# for key in result_dict:
-#     result_dict[key] = [arr.tolist() for arr in result_dict[key]]
-# json_data = json.dumps(result_dict)
-# print(json_data)
+        # for key in result_dict:
+        #     result_dict[key] = [arr.tolist() for arr in result_dict[key]]
+        # json_data = json.dumps(result_dict)
+        # print(json_data)
 
-#Load labels
-lane_data = read_bboxes(result_dict)
-#Output queue length for each lane
-queue_lengths= compute_queue_lengths(lane_data, test_image, vehicle_properties, queue_threshold, loaded_road_directions.get(str(roadNum)))
-print(queue_lengths)
+        #Load labels
+        lane_data = read_bboxes(result_dict)
+        #Output queue length for each lane
+        queue_lengths= compute_queue_lengths(lane_data, test_image, vehicle_properties, queue_threshold, loaded_road_directions.get(str(roadNum)),  os.path.splitext(imge)[0])
+        print(queue_lengths)

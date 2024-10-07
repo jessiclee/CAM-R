@@ -108,7 +108,7 @@ def process_files(csv_folder_path, scales, overlap_thresholds):
                 print(f"Saved mask to {output_file}")
 
 # Example usage
-csv_folder_path = 'centroidslimit/'  # Folder containing your CSV files
+csv_folder_path = './centroidsv2/'  # Folder containing your CSV files
 
 # Array of scales and overlap thresholds to test
 # # scales = [0.3, 0.35, 0.4, 0.45, 0.5]  # Array of scales to test

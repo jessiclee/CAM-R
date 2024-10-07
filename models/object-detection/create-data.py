@@ -62,13 +62,14 @@ def copy_to(files, img_path_dict, path_img, path_label):
 
 def train_test_split(path,neg_path=None, split = 0.15):
     print("------ PROCESS STARTED -------")
-    train_path_img = "./yolo_data/train/images/"
-    train_path_label = "./yolo_data/train/labels/"
-    val_path_img = "./yolo_data/valid/images/"
-    val_path_label = "./yolo_data/valid/labels/"
-    test_path_img = "./yolo_data/test/images/"
-    test_path_label = "./yolo_data/test/labels/"
+    train_path_img = "./yolo_data2/train/images/"
+    train_path_label = "./yolo_data2/train/labels/"
+    val_path_img = "./yolo_data2/valid/images/"
+    val_path_label = "./yolo_data2/valid/labels/"
+    test_path_img = "./yolo_data2/test/images/"
+    test_path_label = "./yolo_data2/test/labels/"
 
+    print(path)
     image_paths = list(paths.list_images(path))
     files = list(set([os.path.splitext(os.path.basename(name))[0] for name in paths.list_images(path)])) ## removing duplicate names i.e. counting only number of images
     image_path_dict = {os.path.splitext(os.path.basename(name))[0]: name for name in image_paths}
@@ -106,5 +107,5 @@ def train_test_split(path,neg_path=None, split = 0.15):
 ## spliting the data into train-test and creating train.txt and test.txt file
 
 ### Change path directory to local data
-remove_dupes('C:/Users/User/CAM-R/models/object-detection/training')
-train_test_split('C:/Users/User/CAM-R/models/object-detection/training') 
+remove_dupes('C:/Users/User/fyp/CAM-R/models/object-detection/training/')
+train_test_split('C:/Users/User/fyp/CAM-R/models/object-detection/training/') 

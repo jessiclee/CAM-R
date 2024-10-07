@@ -26,6 +26,7 @@ for camera in cameras:
         else:
             print(f"{camera} does not sync")
             print("current diction", data_dict)
+            print("goal:", official_classses)
             for file in os.listdir("./training/"+camera):
                 file_path = os.path.join("./training/"+camera, file)
                 if file.endswith('.txt') and file != "train.txt" and os.path.getsize(file_path) > 0:
