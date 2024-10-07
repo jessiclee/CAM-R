@@ -275,7 +275,6 @@ def draw_queue(image, queue):
     return image
 
 def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshold, img_name):
-    
     output_image = image
 
     # Sort the bounding boxes by their centroid's y-coordinate (cy)
@@ -289,16 +288,10 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshol
     prev_y = bboxes[0]["cy"] 
     prev_x = bboxes[0]["cx"] 
     output_image = draw_bbox_with_annotation(output_image, bboxes[0], 0)
-    print("new lane")
+
     # Loop through remaining bounding boxes
     for i in range(1, len(bboxes)):
-        print ('1' )
-        print (prev_y )
-        
         bbox = bboxes[i]
-        print(bbox["cy"])
-        print('queue_list')
-        print(queue_list)
         # Calculate the height of the current bounding box
         bbox_height = bbox["y2"] - bbox["y1"]
         
@@ -311,8 +304,6 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshol
         
         # Calculate the distance between the current bbox and the previous bbox
         dist = math.sqrt((bbox["cx"] - prev_x) ** 2 + (bbox["cy"] - prev_y) ** 2)
-        print('dist:')
-        print(dist)
         
         # Draw the current bounding box and annotate the distance
         output_image = draw_bbox_with_annotation(output_image, bbox, dist)
@@ -331,13 +322,15 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshol
         # Append the last queue list if it's not already added
     if queue_list:
         queue_lists.append(queue_list)
-    """ print('queue_lists')
-    print(queue_lists) """
+
     
     longest_queue_index = max(range(len(queue_lists)), key=lambda i: len(queue_lists[i]))
     combined_queue = queue_lists[longest_queue_index]
 
     if len(combined_queue) <= 1:
+        output_image = draw_queue(output_image, combined_queue)
+        cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+        print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
         return combined_queue
     else:
         for i in range(longest_queue_index, 0, -1) :
@@ -357,7 +350,334 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshol
                 combined_queue = combined_queue + queue_lists[i+1]
             else:
                 break
-        #  save the output image
+     
+    output_image = draw_queue(output_image, combined_queue)
+    cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+    print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+    return combined_queue
+
+def queue_length_bottom_to_top(bboxes, vehicle_properties, image, queue_threshold, img_name):
+    output_image = image
+
+    # Sort the bounding boxes by their centroid's y-coordinate (cy)
+    bboxes = sorted(bboxes, key=lambda box: box["y1"], reverse=True)
+
+    # Initialize the list to hold queue lists
+    queue_lists = []
+
+    # Start the first queue list with the first bounding box
+    queue_list = [bboxes[0]]
+    prev_y = bboxes[0]["cy"] 
+    prev_x = bboxes[0]["cx"] 
+    output_image = draw_bbox_with_annotation(output_image, bboxes[0], 0)
+
+    # Loop through remaining bounding boxes
+    for i in range(1, len(bboxes)):
+        bbox = bboxes[i]
+        # Calculate the height of the current bounding box
+        bbox_height = bbox["y2"] - bbox["y1"]
+        
+        # Get the vehicle property for this class of vehicle
+        vehicle_class = bbox["class"]
+        vehicle_property = vehicle_properties[vehicle_class]
+        
+        # Calculate the threshold value
+        threshold_value = bbox_height * vehicle_property
+        
+        # Calculate the distance between the current bbox and the previous bbox
+        dist = math.sqrt((bbox["cx"] - prev_x) ** 2 + (bbox["cy"] - prev_y) ** 2)
+        
+        # Draw the current bounding box and annotate the distance
+        output_image = draw_bbox_with_annotation(output_image, bbox, dist)
+        
+        # Determine if the current bbox belongs in the same queue or a new one
+        if dist < threshold_value:
+            queue_list.append(bbox)
+        else:
+            queue_lists.append(queue_list)
+            queue_list = [bbox]
+            
+        # Update prev_ymax to the current bbox's ymax
+        prev_y = bbox["cy"]
+        prev_x = bbox["cx"]
+    
+        # Append the last queue list if it's not already added
+    if queue_list:
+        queue_lists.append(queue_list)
+
+    
+    longest_queue_index = max(range(len(queue_lists)), key=lambda i: len(queue_lists[i]))
+    combined_queue = queue_lists[longest_queue_index]
+
+    if len(combined_queue) <= 1:
+        output_image = draw_queue(output_image, combined_queue)
+        cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+        print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+        return combined_queue
+    else:
+        for i in range(longest_queue_index, 0, -1) :
+            current  = queue_lists[i][0]
+            ahead = queue_lists[i-1][-1]
+            dist = math.sqrt((current["cx"] - ahead["cx"]) ** 2 + (current["cy"] - ahead["cy"]) ** 2)
+            if dist < queue_threshold:
+                combined_queue = queue_lists[i-1] + combined_queue
+            else:
+                break
+        
+        for i in range(longest_queue_index, len(queue_lists) - 1) :
+            current  = queue_lists[i][-1]
+            behind = queue_lists[i+1][0]
+            dist = math.sqrt((behind["cx"] - current["cx"]) ** 2 + (behind["cy"] - current["cy"]) ** 2)
+            if dist < queue_threshold:
+                combined_queue = combined_queue + queue_lists[i+1]
+            else:
+                break
+    
+    output_image = draw_queue(output_image, combined_queue)
+    cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+    print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+    return combined_queue
+
+def queue_length_left_to_right(bboxes, vehicle_properties, image, queue_threshold, img_name):
+    output_image = image
+
+    # Sort the bounding boxes by their centroid's y-coordinate (cy)
+    bboxes = sorted(bboxes, key=lambda box: box["x1"])
+
+    # Initialize the list to hold queue lists
+    queue_lists = []
+
+    # Start the first queue list with the first bounding box
+    queue_list = [bboxes[0]]
+    prev_y = bboxes[0]["cy"] 
+    prev_x = bboxes[0]["cx"] 
+    output_image = draw_bbox_with_annotation(output_image, bboxes[0], 0)
+
+    # Loop through remaining bounding boxes
+    for i in range(1, len(bboxes)):
+        bbox = bboxes[i]
+        # Calculate the height of the current bounding box
+        bbox_height = bbox["y2"] - bbox["y1"]
+        
+        # Get the vehicle property for this class of vehicle
+        vehicle_class = bbox["class"]
+        vehicle_property = vehicle_properties[vehicle_class]
+        
+        # Calculate the threshold value
+        threshold_value = bbox_height * vehicle_property
+        
+        # Calculate the distance between the current bbox and the previous bbox
+        dist = math.sqrt((bbox["cx"] - prev_x) ** 2 + (bbox["cy"] - prev_y) ** 2)
+        
+        # Draw the current bounding box and annotate the distance
+        output_image = draw_bbox_with_annotation(output_image, bbox, dist)
+        
+        # Determine if the current bbox belongs in the same queue or a new one
+        if dist < threshold_value:
+            queue_list.append(bbox)
+        else:
+            queue_lists.append(queue_list)
+            queue_list = [bbox]
+            
+        # Update prev_ymax to the current bbox's ymax
+        prev_y = bbox["cy"]
+        prev_x = bbox["cx"]
+    
+        # Append the last queue list if it's not already added
+    if queue_list:
+        queue_lists.append(queue_list)
+
+    
+    longest_queue_index = max(range(len(queue_lists)), key=lambda i: len(queue_lists[i]))
+    combined_queue = queue_lists[longest_queue_index]
+
+    if len(combined_queue) <= 1:
+        output_image = draw_queue(output_image, combined_queue)
+        cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+        print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+        return combined_queue
+    else:
+        for i in range(longest_queue_index, 0, -1) :
+            current  = queue_lists[i][0]
+            ahead = queue_lists[i-1][-1]
+            dist = math.sqrt((current["cx"] - ahead["cx"]) ** 2 + (current["cy"] - ahead["cy"]) ** 2)
+            if dist < queue_threshold:
+                combined_queue = queue_lists[i-1] + combined_queue
+            else:
+                break
+        
+        for i in range(longest_queue_index, len(queue_lists) - 1) :
+            current  = queue_lists[i][-1]
+            behind = queue_lists[i+1][0]
+            dist = math.sqrt((behind["cx"] - current["cx"]) ** 2 + (behind["cy"] - current["cy"]) ** 2)
+            if dist < queue_threshold:
+                combined_queue = combined_queue + queue_lists[i+1]
+            else:
+                break
+    
+    output_image = draw_queue(output_image, combined_queue)
+    cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+    print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+    return combined_queue
+
+def queue_length_right_to_left(bboxes, vehicle_properties, image, queue_threshold, img_name):
+    output_image = image
+
+    # Sort the bounding boxes by their centroid's y-coordinate (cy)
+    bboxes = sorted(bboxes, key=lambda box: box["x1"], reverse=True)
+
+    # Initialize the list to hold queue lists
+    queue_lists = []
+
+    # Start the first queue list with the first bounding box
+    queue_list = [bboxes[0]]
+    prev_y = bboxes[0]["cy"] 
+    prev_x = bboxes[0]["cx"] 
+    output_image = draw_bbox_with_annotation(output_image, bboxes[0], 0)
+
+    # Loop through remaining bounding boxes
+    for i in range(1, len(bboxes)):
+        bbox = bboxes[i]
+        # Calculate the height of the current bounding box
+        bbox_height = bbox["y2"] - bbox["y1"]
+        
+        # Get the vehicle property for this class of vehicle
+        vehicle_class = bbox["class"]
+        vehicle_property = vehicle_properties[vehicle_class]
+        
+        # Calculate the threshold value
+        threshold_value = bbox_height * vehicle_property
+        
+        # Calculate the distance between the current bbox and the previous bbox
+        dist = math.sqrt((bbox["cx"] - prev_x) ** 2 + (bbox["cy"] - prev_y) ** 2)
+        
+        # Draw the current bounding box and annotate the distance
+        output_image = draw_bbox_with_annotation(output_image, bbox, dist)
+        
+        # Determine if the current bbox belongs in the same queue or a new one
+        if dist < threshold_value:
+            queue_list.append(bbox)
+        else:
+            queue_lists.append(queue_list)
+            queue_list = [bbox]
+            
+        # Update prev_ymax to the current bbox's ymax
+        prev_y = bbox["cy"]
+        prev_x = bbox["cx"]
+    
+        # Append the last queue list if it's not already added
+    if queue_list:
+        queue_lists.append(queue_list)
+
+    
+    longest_queue_index = max(range(len(queue_lists)), key=lambda i: len(queue_lists[i]))
+    combined_queue = queue_lists[longest_queue_index]
+
+    if len(combined_queue) <= 1:
+        output_image = draw_queue(output_image, combined_queue)
+        cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+        print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+        return combined_queue
+    else:
+        for i in range(longest_queue_index, 0, -1) :
+            current  = queue_lists[i][0]
+            ahead = queue_lists[i-1][-1]
+            dist = math.sqrt((current["cx"] - ahead["cx"]) ** 2 + (current["cy"] - ahead["cy"]) ** 2)
+            if dist < queue_threshold:
+                combined_queue = queue_lists[i-1] + combined_queue
+            else:
+                break
+        
+        for i in range(longest_queue_index, len(queue_lists) - 1) :
+            current  = queue_lists[i][-1]
+            behind = queue_lists[i+1][0]
+            dist = math.sqrt((behind["cx"] - current["cx"]) ** 2 + (behind["cy"] - current["cy"]) ** 2)
+            if dist < queue_threshold:
+                combined_queue = combined_queue + queue_lists[i+1]
+            else:
+                break
+    
+    output_image = draw_queue(output_image, combined_queue)
+    cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+    print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+    return combined_queue
+
+def queue_length_right_to_left(bboxes, vehicle_properties, image, queue_threshold, img_name):
+    output_image = image
+
+    # Sort the bounding boxes by their centroid's y-coordinate (cy)
+    bboxes = sorted(bboxes, key=lambda box: box["x1"], reverse=True)
+
+    # Initialize the list to hold queue lists
+    queue_lists = []
+
+    # Start the first queue list with the first bounding box
+    queue_list = [bboxes[0]]
+    prev_y = bboxes[0]["cy"] 
+    prev_x = bboxes[0]["cx"] 
+    output_image = draw_bbox_with_annotation(output_image, bboxes[0], 0)
+
+    # Loop through remaining bounding boxes
+    for i in range(1, len(bboxes)):
+        bbox = bboxes[i]
+        # Calculate the height of the current bounding box
+        bbox_height = bbox["y2"] - bbox["y1"]
+        
+        # Get the vehicle property for this class of vehicle
+        vehicle_class = bbox["class"]
+        vehicle_property = vehicle_properties[vehicle_class]
+        
+        # Calculate the threshold value
+        threshold_value = bbox_height * vehicle_property
+        
+        # Calculate the distance between the current bbox and the previous bbox
+        dist = math.sqrt((bbox["cx"] - prev_x) ** 2 + (bbox["cy"] - prev_y) ** 2)
+        
+        # Draw the current bounding box and annotate the distance
+        output_image = draw_bbox_with_annotation(output_image, bbox, dist)
+        
+        # Determine if the current bbox belongs in the same queue or a new one
+        if dist < threshold_value:
+            queue_list.append(bbox)
+        else:
+            queue_lists.append(queue_list)
+            queue_list = [bbox]
+            
+        # Update prev_ymax to the current bbox's ymax
+        prev_y = bbox["cy"]
+        prev_x = bbox["cx"]
+    
+        # Append the last queue list if it's not already added
+    if queue_list:
+        queue_lists.append(queue_list)
+
+    
+    longest_queue_index = max(range(len(queue_lists)), key=lambda i: len(queue_lists[i]))
+    combined_queue = queue_lists[longest_queue_index]
+
+    if len(combined_queue) <= 1:
+        output_image = draw_queue(output_image, combined_queue)
+        cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+        print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+        return combined_queue
+    else:
+        for i in range(longest_queue_index, 0, -1) :
+            current  = queue_lists[i][0]
+            ahead = queue_lists[i-1][-1]
+            dist = math.sqrt((current["cx"] - ahead["cx"]) ** 2 + (current["cy"] - ahead["cy"]) ** 2)
+            if dist < queue_threshold:
+                combined_queue = queue_lists[i-1] + combined_queue
+            else:
+                break
+        
+        for i in range(longest_queue_index, len(queue_lists) - 1) :
+            current  = queue_lists[i][-1]
+            behind = queue_lists[i+1][0]
+            dist = math.sqrt((behind["cx"] - current["cx"]) ** 2 + (behind["cy"] - current["cy"]) ** 2)
+            if dist < queue_threshold:
+                combined_queue = combined_queue + queue_lists[i+1]
+            else:
+                break
     
     output_image = draw_queue(output_image, combined_queue)
     cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
@@ -405,13 +725,13 @@ def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold,
         if dir == "up":
             queue_list = queue_length_top_to_bottom(lane_bboxes, vehicle_properties, image, queue_threshold, (img_name +"----"+ str(lane_id)))
             print('queue_list')
-        """ elif direction == "down":
+        elif direction == "down":
             queue_list = queue_length_bottom_to_top(lane_bboxes, vehicle_properties, image, queue_threshold)
         elif direction == "left":
             queue_list = queue_length_left_to_right(lane_bboxes, vehicle_properties, image, queue_threshold)
         elif direction == "right":
             queue_list = queue_length_right_to_left(lane_bboxes, vehicle_properties, image, queue_threshold)
-        """
+       
         # Store lane_id and queue length in the dictionary
         queue_lengths[lane_id] = len(queue_list) 
     
