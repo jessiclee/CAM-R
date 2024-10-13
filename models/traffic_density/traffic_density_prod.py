@@ -2,9 +2,7 @@ import torch
 import torch.nn as nn
 from torchvision.models import vgg16, VGG16_Weights
 from torchvision import transforms
-from torch.utils.data import DataLoader
 from PIL import Image
-import td_run_model2
 
 class_dict = {
     0: 'High',
@@ -14,10 +12,7 @@ class_dict = {
 
 def predictDensity(num_classes, image_path, device):
     
-    # Define the model architecture with the same number of classes used during training
     model = VGG16MultiClassClassifier(num_classes=num_classes).to(device)
-    # Load the state dict
-    
     state_dict = torch.load('weights/43.pth', map_location=torch.device('cpu'))
     model.load_state_dict(state_dict)
 
@@ -35,7 +30,7 @@ def predictDensity(num_classes, image_path, device):
     img_tensor = img_tensor.unsqueeze(0)
     img_tensor = img_tensor.to(device)
     
-    outputs = model(img_tensor)  # Forward pass through the model
+    outputs = model(img_tensor)
     _, predicted = torch.max(outputs, 1)  # Get the predicted class
 
     # Apply softmax to get probabilities
@@ -60,7 +55,8 @@ class VGG16MultiClassClassifier(nn.Module):
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 num_classes = 3
-image_path = "C:/Users/Jess/OneDrive - Singapore Management University/FYP/midterm_demo/density/medium/1503_15-07-2024_18-00-01.jpg" # dynamically change in the web app
+# dynamically change in the web app after API got the image
+image_path = "C:/Users/Jess/OneDrive - Singapore Management University/FYP/midterm_demo/density/medium/1503_15-07-2024_18-00-01.jpg" 
 try:
     probs, predicted = predictDensity(num_classes, image_path, device)
     print(f"Predicted class: {predicted}, Probabilities: {probs}")
