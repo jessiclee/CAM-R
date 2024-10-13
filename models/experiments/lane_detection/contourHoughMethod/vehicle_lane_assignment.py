@@ -188,8 +188,8 @@ def get_screen_size():
 # input road
 roadNum = input("Enter road ID: ")
 imagename = roadNum
-# directory paths
-main_folder_dir = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/"
+# directory paths11
+main_folder_dir = "C:/Users/jesle/Desktop/FYP/newtraffic/"
 image_path = main_folder_dir + "centroidimages/" + imagename + ".jpg"
 lane_path = main_folder_dir + "v3result/manual/lines/" + roadNum + ".txt"
 centroid_path = main_folder_dir + "centroidimages/results/" + roadNum + ".csv"
@@ -203,7 +203,7 @@ lane_id = 1
 for line in lines:
     midpoint_x = int((line[0][0] + line[1][0]) / 2)
     midpoint_y = int((line[0][1] + line[1][1]) / 2)
-    cv2.putText(test_image,str(lane_id), (midpoint_x,midpoint_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+    cv2.putText(test_image,str(lane_id), (midpoint_x,midpoint_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
     line = line.reshape((-1, 1, 2)).astype(np.int32)
     cv2.polylines(test_image, [line], isClosed=False, color=(255, 0, 0), thickness=2)
     lane_id+=1
@@ -252,6 +252,13 @@ cv2.namedWindow("lines", cv2.WINDOW_NORMAL)
 screen_width, screen_height = get_screen_size()
 cv2.resizeWindow("lines", screen_width, screen_height)
 cv2.imshow("lines", test_image)
+
+# Save the output image
+output_image_path = os.path.join("C:/Users/jesle/Desktop/FYP/newtraffic", "output", f"{imagename}_output.jpg")  # Change the path as needed
+cv2.imwrite(output_image_path, test_image)
+print(f"Output image saved at: {output_image_path}")
+
+
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 

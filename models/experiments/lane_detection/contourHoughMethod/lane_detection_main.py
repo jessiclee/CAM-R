@@ -337,6 +337,64 @@ def pointLineTest(polyline, point, threshold=4.0):
     # Return True if the closest distance is within the threshold
     return min_distance <= threshold
 
+def point_to_segment_distance_with_projection(point, segment_start, segment_end):
+    """
+    Calculate the shortest distance from a point to a line segment and return the projection point.
+
+    Args:
+    - point: A tuple (x0, y0) representing the point.
+    - segment_start: A tuple (x1, y1) representing the start of the line segment.
+    - segment_end: A tuple (x2, y2) representing the end of the line segment.
+
+    Returns:
+    - distance: The shortest distance from the point to the segment.
+    - projection: The coordinates (proj_x, proj_y) of the projection point on the segment.
+    """
+    x0, y0 = point
+    x1, y1 = segment_start
+    x2, y2 = segment_end
+
+    # Vector from segment_start to segment_end
+    dx, dy = x2 - x1, y2 - y1
+    # If the segment is a point, return the distance to that point
+    if dx == 0 and dy == 0:
+        return np.hypot(x0 - x1, y0 - y1), (x1, y1)
+    
+    # Project point onto the line (but not beyond the segment ends)
+    t = ((x0 - x1) * dx + (y0 - y1) * dy) / (dx * dx + dy * dy)
+    t = max(0, min(1, t))  # Clamp t to the segment
+    
+    # Find the projection point on the segment
+    proj_x = x1 + t * dx
+    proj_y = y1 + t * dy
+    
+    # Return the distance from the point to the projection and the projection point
+    distance = np.hypot(x0 - proj_x, y0 - proj_y)
+    return distance, (proj_x, proj_y)
+
+def point_to_polyline_distance_with_projection(point, polyline):
+    """
+    Calculate the shortest distance from a point to a polyline and return the projection point.
+
+    Args:
+    - point: A tuple (x0, y0) representing the point.
+    - polyline: A list of tuples representing the polyline coordinates.
+
+    Returns:
+    - min_distance: The shortest distance from the point to the polyline.
+    - closest_projection: The projection coordinates (proj_x, proj_y) on the polyline.
+    """
+    min_distance = float('inf')
+    closest_projection = None
+    
+    for i in range(len(polyline) - 1):
+        segment_start = polyline[i]
+        segment_end = polyline[i + 1]
+        distance, projection = point_to_segment_distance_with_projection(point, segment_start, segment_end)
+        if distance < min_distance:
+            min_distance = distance
+    
+    return min_distance
 # Function to load auto polylines from txt file
 def load_lines_from_file(file_path):
     lines = []
@@ -418,19 +476,25 @@ def on_mouse(event, x, y, buttons, user_param):
     
     if id_mode and event == cv2.EVENT_LBUTTONDOWN:
         lane_id = get_lane_id()  # Get the full lane ID (multi-digit)
+        lane_assignment_lines = lines.copy()
         if lane_id:  # Convert the key code to a character (number)
-            for i, line in enumerate(lines):
-                if pointLineTest(line, (x, y)):
+            closest_line, closest_line_distance = None, float("inf")
+            for i, line in enumerate(lane_assignment_lines):
+                print(f"Clicked position ({x}, {y})")
+                dist = point_to_polyline_distance_with_projection((x, y), line)
+                if dist < closest_line_distance:
                     print(f"Line ID {lane_id} assigned.")
-                    line_selected = i
-                    id_dict.update({lane_id : i})
-                    print(id_dict)
-                    draw_lane_id(final_img, lane_id, x, y) 
-                    break
+                    closest_line = i
+                    closest_line_distance = dist
+            
+            cv2.polylines(final_img, [lane_assignment_lines[closest_line].reshape((-1, 1, 2)).astype(np.int32)], isClosed=False, color=(0, 255, 0), thickness=2)
+            id_dict.update({lane_id : closest_line})
+            print(id_dict)
+            draw_lane_id(final_img, lane_id, x, y) 
 
 def draw_lane_id(image, lane_id, x, y):
     font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(image, f"{lane_id}", (x, y), font, 1, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(image, f"{lane_id}", (x, y), font, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
 
 def get_camera_size(camid):
     camera_id = int(camid)
@@ -453,7 +517,7 @@ def get_camera_size(camid):
 # ***** replace with required image path *****
 roadNum = input("Enter road ID: ")
 main_folder_dir = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/"
-path = main_folder_dir + "images/" + roadNum + ".jpg"
+path = main_folder_dir + "centroidimages/" + roadNum + ".jpg"
 img = cv2.imread(path)
 clone = img.copy()
 temp = img.copy()
@@ -464,8 +528,8 @@ is_hd = True
 if img_width == 240:
     is_hd = False
 
-lines = pipeline(roadNum, is_hd, main_folder_dir)
-
+# lines = pipeline(roadNum, is_hd, main_folder_dir)
+lines = load_lines_from_file("C:/Users/Zhiyi/Desktop/FYP/newtraffic/v3result/manual/lines/" + roadNum + ".txt")
 cv2.namedWindow("image", cv2.WINDOW_NORMAL)
 screen_width, screen_height = get_screen_size()
 cv2.resizeWindow("image", screen_width, screen_height)
@@ -545,9 +609,14 @@ cv2.waitKey(0)
 
 final_id_lines = []
 sorted_keys = sorted(id_dict.keys(), key=int) 
+print(sorted_keys)
 for key in sorted_keys:
     line = id_dict[key]
+    print(line)
+    print(lines[line])
     final_id_lines.append(lines[line])
+print("final:")
+print(final_id_lines)
 # Save the image with lines
 cv2.imwrite(main_folder_dir + "v3result/manual2/mask-" + os.path.basename(path), final_img)
 save_lines_to_file(final_id_lines,  main_folder_dir + "v3result/manual2/lines/" + roadNum + '.txt')

@@ -254,7 +254,7 @@ main_folder_dir = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/"
 image_path = main_folder_dir + "centroidimages/" + roadNum + ".jpg"
 test_image = cv2.imread(image_path)
 
-lane_path = main_folder_dir + "v3result/manual/lines/" + roadNum + ".txt"
+lane_path = main_folder_dir + "v3result/manual2/lines/" + roadNum + ".txt"
 lines = load_lines_from_file(lane_path)
 
 width, height = get_camera_size(roadNum)

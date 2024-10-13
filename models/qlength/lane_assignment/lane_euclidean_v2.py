@@ -9,7 +9,7 @@ import torch
 from super_gradients.training import models
 
 # YOLO-NAS Model
-yolo_nas_l = models.get('yolo_nas_s', num_classes=4, checkpoint_path="19.pth")
+yolo_nas_l = models.get('yolo_nas_s', num_classes=4, checkpoint_path="C:/Users/jesle/Desktop/fyp/CAM-R/models/qlength/lane_assignment/19.pth")
 
 # Function to calculate centroids
 def calc_centroids(xy_array):
@@ -109,6 +109,8 @@ def visualise(overlay_image, green_centroids, blue_centroids, centroids_outside_
 
     # Display plot
     plt.show()
+
+    plt.savefig("C:/Users/jesle/Desktop/FYP/newtraffic/jess_imgs", bbox_inches='tight', pad_inches=0)
     
 def save_json(lane_assignments, basename):
     # Save the dictionary with only cen_x, cen_y, and class to a JSON file
@@ -124,6 +126,13 @@ def save_json(lane_assignments, basename):
 
 def main_function(mask_path, predicting_image_path):
     # Load the provided mask image
+    binary_mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+
+    if binary_mask is None:
+        raise FileNotFoundError(f"Could not load mask from {mask_path}. Please check the file path and format.")
+
+    img_height, img_width = binary_mask.shape
+
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
 
     # Apply YOLO-NAS to the image to get centroids and bounding boxes
@@ -200,11 +209,19 @@ def main_function(mask_path, predicting_image_path):
     centroids_outside_lane = new_outside_lane
 
     visualise(overlay_image, green_centroids, blue_centroids, centroids_outside_lane, lane_key_points, lane_assignments)
-    save_json(lane_assignments, os.path.basename(mask_path).split('.')[0])
+    #save_json(lane_assignments, os.path.basename(mask_path).split('.')[0])
 
+<<<<<<< HEAD
 # # Single usage
 mask_path = '../../experiments/lane_detection/overlap_lane_masks/5794.jpg'
 predicting_image_path = 'C:/Users/Jess/Desktop/School/FYP/CAM-R/models/newtraffic/centroidimages/5794.jpg'
+=======
+# Single usage
+#mask_path = '../../experiments/lane_detection/overlap_lane_masks/1001.jpg'
+mask_path =  'C:\\Users\\jesle\\Desktop\\fyp\\CAM-R\\models\\experiments\\lane_detection\\overlap_lane_masks\\2706.jpg'
+predicting_image_path = 'C:\\Users\\jesle\\Desktop\\fyp\\newtraffic\\centroidimages\\2706.jpg'
+#predicting_image_path = 'C:\\Users\\jesle\\Desktop\\fyp\\newtraffic\\images\\1001.jpg'
+>>>>>>> 64a94600d3cc39eeaf950c277a4c080852967d14
 main_function(mask_path, predicting_image_path)
 
 
