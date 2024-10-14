@@ -65,6 +65,33 @@ camera_sizes = {
 ########################### FUNCTIONS ########################################
 ##############################################################################
 
+def filter_high_iou_boxes(boxes, classes, scores, iou_threshold=0.1):
+    """Further filter out boxes that have high overlap even after NMS."""
+    keep = []
+    for i, box in enumerate(boxes):
+        if all(calculate_iou(box, boxes[j]) < iou_threshold for j in keep):
+            keep.append(i)
+    return boxes[keep], classes[keep], scores[keep]
+
+def calculate_iou(box1, box2):
+    """Calculate IoU between two bounding boxes [x1, y1, x2, y2]."""
+    x1 = max(box1[0], box2[0])
+    y1 = max(box1[1], box2[1])
+    x2 = min(box1[2], box2[2])
+    y2 = min(box1[3], box2[3])
+
+    # Compute intersection area
+    intersection = max(0, x2 - x1) * max(0, y2 - y1)
+    
+    # Compute area of each bounding box
+    area1 = (box1[2] - box1[0]) * (box1[3] - box1[1])
+    area2 = (box2[2] - box2[0]) * (box2[3] - box2[1])
+    
+    # Compute union area
+    union = area1 + area2 - intersection
+    
+    return intersection / union if union != 0 else 0
+
 def get_camera_size(camid):
     camera_id = int(camid)
     
@@ -223,25 +250,28 @@ def apply_yolo_nas_l(image_path):
     accepted_list = [0,1,2,3]  # Example labels that are accepted
     filename = image_path
     if filename.endswith(".jpg") or filename.endswith(".png"):  # Adjust based on your image file types
-        camera_id, extension = os.path.splitext(os.path.basename(image_path))
-        camera_id = camera_id.split('_')[0]
+        camera_idn, extension = os.path.splitext(os.path.basename(image_path))
         xy_array = []
         image_path = os.path.join(".", filename)
         image = Image.open(image_path)
-        filtered_image = yolo_nas_l.predict(image, conf=0.5)
-        filtered_image.save(f"./results/predictions_image_{camera_id}.jpg")
+        filtered_image = yolo_nas_l.predict(image, conf=0.25, iou=0.1)
+        
         bboxes = []
         class_indx = []
         conf = []
         pred = filtered_image.prediction
         labels = pred.labels.astype(int)
         for index, label in enumerate(labels):
-            # print(label)
-            # if label in accepted_list:
-                # print(pred.bboxes_xyxy[index])
-            bboxes.append(pred.bboxes_xyxy[index])
-            class_indx.append(label)
-            conf.append(pred.confidence.astype(float)[index])
+            confi = pred.confidence.astype(float)[index]
+            if (label==0 and confi > 0.6) or (label==1 and confi > 0.5) or (label==2 and confi > 0.65) or (label==3 and confi > 0.35):
+                bboxes.append(pred.bboxes_xyxy[index])
+                class_indx.append(label)
+                conf.append(confi)
+        bboxes, class_indx, conf = filter_high_iou_boxes(np.array(bboxes), np.array(class_indx), np.array(conf), iou_threshold=0.5)
+        pred.bboxes_xyxy = np.array(bboxes) 
+        pred.labels = np.array(class_indx)
+        pred.confidence = np.array(conf)
+        filtered_image.save(f"./predict/predictions_image_{camera_idn}.jpg")
             
         # Update the filtered image with filtered detections
         xy_array.append(np.array(bboxes))
@@ -329,8 +359,8 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshol
 
     if len(combined_queue) <= 1:
         output_image = draw_queue(output_image, combined_queue)
-        cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
-        print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+        # cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+        # print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
         return combined_queue
     else:
         for i in range(longest_queue_index, 0, -1) :
@@ -352,8 +382,8 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshol
                 break
      
     output_image = draw_queue(output_image, combined_queue)
-    cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
-    print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+    # cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+    # print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
     return combined_queue
 
 def queue_length_bottom_to_top(bboxes, vehicle_properties, image, queue_threshold, img_name):
@@ -411,8 +441,8 @@ def queue_length_bottom_to_top(bboxes, vehicle_properties, image, queue_threshol
 
     if len(combined_queue) <= 1:
         output_image = draw_queue(output_image, combined_queue)
-        cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
-        print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+        # cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+        # print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
         return combined_queue
     else:
         for i in range(longest_queue_index, 0, -1) :
@@ -434,8 +464,8 @@ def queue_length_bottom_to_top(bboxes, vehicle_properties, image, queue_threshol
                 break
     
     output_image = draw_queue(output_image, combined_queue)
-    cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
-    print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+    # cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+    # print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
     return combined_queue
 
 def queue_length_left_to_right(bboxes, vehicle_properties, image, queue_threshold, img_name):
@@ -493,8 +523,8 @@ def queue_length_left_to_right(bboxes, vehicle_properties, image, queue_threshol
 
     if len(combined_queue) <= 1:
         output_image = draw_queue(output_image, combined_queue)
-        cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
-        print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+        # cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+        # print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
         return combined_queue
     else:
         for i in range(longest_queue_index, 0, -1) :
@@ -516,8 +546,8 @@ def queue_length_left_to_right(bboxes, vehicle_properties, image, queue_threshol
                 break
     
     output_image = draw_queue(output_image, combined_queue)
-    cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
-    print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+    # cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+    # print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
     return combined_queue
 
 def queue_length_right_to_left(bboxes, vehicle_properties, image, queue_threshold, img_name):
@@ -575,8 +605,8 @@ def queue_length_right_to_left(bboxes, vehicle_properties, image, queue_threshol
 
     if len(combined_queue) <= 1:
         output_image = draw_queue(output_image, combined_queue)
-        cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
-        print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+        # cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+        # print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
         return combined_queue
     else:
         for i in range(longest_queue_index, 0, -1) :
@@ -598,8 +628,8 @@ def queue_length_right_to_left(bboxes, vehicle_properties, image, queue_threshol
                 break
     
     output_image = draw_queue(output_image, combined_queue)
-    cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
-    print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+    # cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+    # print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
     return combined_queue
 
 def queue_length_right_to_left(bboxes, vehicle_properties, image, queue_threshold, img_name):
@@ -657,8 +687,8 @@ def queue_length_right_to_left(bboxes, vehicle_properties, image, queue_threshol
 
     if len(combined_queue) <= 1:
         output_image = draw_queue(output_image, combined_queue)
-        cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
-        print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+        # cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
+        # print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
         return combined_queue
     else:
         for i in range(longest_queue_index, 0, -1) :
@@ -680,8 +710,8 @@ def queue_length_right_to_left(bboxes, vehicle_properties, image, queue_threshol
                 break
     
     output_image = draw_queue(output_image, combined_queue)
-    cv2.imwrite(f"./results/output_image_{img_name}.jpg", output_image) 
-    print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
+    # cv2.imwrite(f"./predict/output_image_{img_name}.jpg", output_image) 
+    # print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
     return combined_queue
 
 def read_bboxes(lanes_dict):
@@ -713,7 +743,7 @@ def read_bboxes(lanes_dict):
 
 def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold, direction, img_name):
     queue_lengths = {}
-    print(f"FUNCTION ENTERED FOR: {img_name}")
+    # print(f"FUNCTION ENTERED FOR: {img_name}")
    
     # Process each lane's bounding boxes
     for lane_id, lane_bboxes in lane_data.items():
@@ -724,7 +754,7 @@ def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold,
         # Determine the queue based on the direction
         if dir == "up":
             queue_list = queue_length_top_to_bottom(lane_bboxes, vehicle_properties, image, queue_threshold, (img_name +"----"+ str(lane_id)))
-            print('queue_list')
+            # print('queue_list')
         elif direction == "down":
             queue_list = queue_length_bottom_to_top(lane_bboxes, vehicle_properties, image, queue_threshold)
         elif direction == "left":
@@ -734,6 +764,7 @@ def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold,
        
         # Store lane_id and queue length in the dictionary
         queue_lengths[lane_id] = len(queue_list) 
+        # cv2.imwrite(f"./predict/output_image_{img_name}.jpg", image) 
     
     return queue_lengths
 
@@ -746,16 +777,17 @@ def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold,
 
 # directory paths
 main_folder_dir = "C:/Users/User/fyp/newtraffic/"
+image_dir = "C:/Users/User/fyp/presentation/"
 
 loaded_road_directions = {}
 with open('C:/Users/User/fyp/CAM-R/models/queue_length/lane_directions.json', 'r') as file:
     loaded_road_directions = json.load(file)
 
 # image_path = main_folder_dir + "centroidimages/" + roadNum + ".jpg"
-images = os.listdir( main_folder_dir + "centroidimages/")
+images = os.listdir( image_dir)
 for imge in images:
     if (imge.endswith(".jpg")):
-        image_path = main_folder_dir + "centroidimages/" + imge
+        image_path = image_dir + imge
         roadNum = os.path.splitext(os.path.basename(image_path))[0].split('_')[0]
         print(roadNum)
         print(image_path)
@@ -809,9 +841,10 @@ for imge in images:
         #     result_dict[key] = [arr.tolist() for arr in result_dict[key]]
         # json_data = json.dumps(result_dict)
         # print(json_data)
-
+        cv2.imwrite(f"./queue/output_image_{os.path.splitext(imge)[0]}.jpg", test_image)
         #Load labels
         lane_data = read_bboxes(result_dict)
         #Output queue length for each lane
         queue_lengths= compute_queue_lengths(lane_data, test_image, vehicle_properties, queue_threshold, loaded_road_directions.get(str(roadNum)),  os.path.splitext(imge)[0])
+        cv2.imwrite(f"./results/output_image_{os.path.splitext(imge)[0]}.jpg", test_image)
         print(queue_lengths)
