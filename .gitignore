@@ -20,3 +20,4 @@ models/experiments/lane_detection/lines
 checkpoints/
 *.pth
 *.pyc
+ui/backend/metrics/src/datamall_credentials.py
