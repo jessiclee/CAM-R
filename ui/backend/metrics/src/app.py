@@ -66,17 +66,45 @@ def health_check():
             }
     ), 200
 
+"""
+TRAFFIC QUEUE POST REQUEST
+INPUT:
+    Type: JSON Data of an array of camera ids
+    Example: {"id" : [2703, 9706]}
+    
+    or
+    Type: Form Data
+    Example: all fields + old image
+
+OUTPUT:
+    Type: JSON
+    Example: {
+            "queues": {
+                "2703": {
+                    "2": 1,
+                    "4": 1
+                }
+            }
+}
+"""
 @app.route('/get_queue', methods=['POST'])
 def get_queue():
-    # Access JSON data from request body
-    data = request.json
-    cam_id = data.get('id')
+    cam_id = None
+    images = None
+    if 'image' in request.files:
+        cam_id = request.form['id']
+        old_image = request.files['image']
+        old_image = old_image.read()
+        images = {cam_id: old_image}
+    else:
+        data = request.json
+        cam_id = data.get('id')
+        # images return a dictionary of cameraid and its respective image link
+        images = get_current_image(cam_id)
+        # if there is a 400 error in get_current_image, return bad request code
+        if type(images) == tuple:
+            return images
 
-    # images return a dictionary of cameraid and its respective image link
-    images = get_current_image(cam_id)
-    # if there is a 400 error in get_current_image, return bad request code
-    if type(images) == tuple:
-        return images
     traffic_images = {}
     queues = {}
     try:
@@ -166,6 +194,10 @@ TRAFFIC DENSITY POST REQUEST
 INPUT:
     Type: JSON Data of an array of camera ids
     Example: {"id" : [2703, 9706]}
+    
+    or
+    Type: Form Data
+    Example: all fields + old image
 
 OUTPUT:
     Type: JSON
@@ -173,15 +205,21 @@ OUTPUT:
 """
 @app.route('/density', methods=['POST'])
 def get_density():
-    # Access JSON data from request body
-    data = request.json  
-    cam_id = data.get('id')
-    
-    # images return a dictionary of cameraid and its respective image link
-    images = get_current_image(cam_id)
-    # if there is a 400 error in get_current_image, return bad request code
-    if type(images) == tuple:
-        return images
+    cam_id = None
+    images = None
+    if 'image' in request.files:
+        cam_id = request.form['id']
+        old_image = request.files['image']
+        old_image = old_image.read()
+        images = {cam_id: old_image}
+    else:
+        data = request.json
+        cam_id = data.get('id')
+        # images return a dictionary of cameraid and its respective image link
+        images = get_current_image(cam_id)
+        # if there is a 400 error in get_current_image, return bad request code
+        if type(images) == tuple:
+            return images
     
     densities = {}
     try:
