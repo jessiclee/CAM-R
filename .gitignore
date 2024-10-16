@@ -8,6 +8,10 @@ models/object-detection/voc_data/
 models/object-detection/training/
 models/object-detection/yolo_data2/
 models/object-detection/vehicle-orientation-5/
+models/queue_length/traffic.csv
+models/queue_length/predict
+models/queue_length/queue
+models/queue_length/results
 models/object-detection/yolo-8/runs
 models/traffic_density/end
 models/traffic_density/photos
