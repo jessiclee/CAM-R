@@ -494,7 +494,7 @@ def on_mouse(event, x, y, buttons, user_param):
 
 def draw_lane_id(image, lane_id, x, y):
     font = cv2.FONT_HERSHEY_SIMPLEX
-    cv2.putText(image, f"{lane_id}", (x, y), font, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+    cv2.putText(image, f"{lane_id}", (x, y), font, 3, (255, 0, 0), 2, cv2.LINE_AA)
 
 def get_camera_size(camid):
     camera_id = int(camid)
