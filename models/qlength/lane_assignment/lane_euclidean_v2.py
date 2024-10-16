@@ -116,11 +116,12 @@ def save_json(lane_assignments, basename):
     # Save the dictionary with only cen_x, cen_y, and class to a JSON file
     lane_assignments_serializable = {
         lane: [[int(cen_x), int(cen_y), int(class_label)] for (cen_x, cen_y, xmin, ymin, xmax, ymax, class_label) in centroids]
-        for lane, centroids in lane_assignments.items()
+        for lane, centroids in lane_assignments.items() if centroids  # Only include lanes with non-empty centroid lists
     }
 
     # Save to JSON file
-    with open('accuracy_test/predictions/' + basename +'.json', 'w') as file:
+    json_path = os.path.join('accuracy_test/predictions', f'{basename}.json')
+    with open(json_path, 'w') as file:
         json.dump(lane_assignments_serializable, file)
 
 def main_function(mask_path, predicting_image_path):
@@ -210,11 +211,17 @@ def main_function(mask_path, predicting_image_path):
     visualise(overlay_image, green_centroids, blue_centroids, centroids_outside_lane, lane_key_points, lane_assignments)
     #save_json(lane_assignments, os.path.basename(mask_path).split('.')[0])
 
+<<<<<<< HEAD
+# # Single usage
+mask_path = '../../experiments/lane_detection/overlap_lane_masks/5794.jpg'
+predicting_image_path = 'C:/Users/Jess/Desktop/School/FYP/CAM-R/models/newtraffic/centroidimages/5794.jpg'
+=======
 # Single usage
 #mask_path = '../../experiments/lane_detection/overlap_lane_masks/1001.jpg'
 mask_path =  'C:\\Users\\jesle\\Desktop\\fyp\\CAM-R\\models\\experiments\\lane_detection\\overlap_lane_masks\\2706.jpg'
 predicting_image_path = 'C:\\Users\\jesle\\Desktop\\fyp\\newtraffic\\centroidimages\\2706.jpg'
 #predicting_image_path = 'C:\\Users\\jesle\\Desktop\\fyp\\newtraffic\\images\\1001.jpg'
+>>>>>>> 64a94600d3cc39eeaf950c277a4c080852967d14
 main_function(mask_path, predicting_image_path)
 
 

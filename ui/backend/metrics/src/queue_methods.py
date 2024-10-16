@@ -1,152 +1,23 @@
-"""
-MAIN PIPELINE CODE
-
-SUMMARY:
-this python file should integrate vehicle_detection.py --> vehicle_lane_assignment.py together
-"""
-
-##############################################################################
-###########################  IMPORTS  ########################################
-##############################################################################
 import os
 from PIL import Image
 import numpy as np
 import pandas as pd
-import logging
 import torch
-from super_gradients.training import models
 import cv2
 import json
-import tkinter as tk
 import math
-import csv
-import time
 
-##############################################################################
-########################### VARIABLES ########################################
-##############################################################################
 
-#define file paths
-# Get the absolute path of the current working directory (A)
-current_dir = os.getcwd()
-
-# Get the path of folder B (parent directory of A)
-parent_dir = os.path.dirname(current_dir)
-
-# Specify folder C inside B
-main_folder_dir = os.path.join(parent_dir, "newtraffic/")
-
-image_dir =  os.path.join(parent_dir, "newtraffic/images/")
-
-translate = {
-    5:0,
-    7:1,
-    3:2,
-    2:3
-}
-
-#Define vehicle properties 
-vehicle_properties = {
-    2: 1.7, 
-    0: 1.7,
-    1: 1.7,
-    3: 1.7,
-}
-
-queue_threshold = 3
-
-# Remove all Logger notifications
-logger = logging.getLogger()
-logger.setLevel(logging.CRITICAL)
-
-# Setting up YOLO NAS model
-print("THIS IS THE PATH", os.path.join(parent_dir, "19.pth"))
-yolo_nas_l = models.get('yolo_nas_s', num_classes=4, checkpoint_path=os.path.join(parent_dir, "19.pth"))
-# yolo_nas_l = models.get(
-#         'yolo_nas_s',  
-#         pretrained_weights="coco"
-#     )
-    
-
-camera_sizes = {
-    "small": {
-        "width": 320,
-        "height": 240,
-        "cameras": [1001, 1004, 1005, 1006, 1504, 1501, 1502, 1503, 1505, 1002, 1003]
-    },
-    "large": {
-        "width": 1920,
-        "height": 1080,
-        "cameras": [4701, 4702, 4704, 4705, 4706, 4707, 4708, 4709, 4710, 4712, 4714, 
-                    4716, 4798, 4799, 6716, 2703, 2704, 2705, 2706, 2707, 2708, 1701, 
-                    1702, 1703, 1704, 1705, 1706, 1707, 1709, 1711, 1113, 3702, 3705, 
-                    3793, 3795, 3796, 3797, 3798, 3704, 5798, 8701, 8702, 8704, 8706, 
-                    5794, 5795, 5797, 5799, 6701, 6703, 6704, 6705, 6706, 6708, 6710, 
-                    6711, 6712, 6713, 6714, 6715, 7797, 7798, 9701, 9702, 9703, 9704, 
-                    9705, 9706, 1111, 1112, 7791, 7793, 7794, 7795, 7796, 4703, 4713, 
-                    2701, 2702]
-    }
-}
-
-##############################################################################
-########################### FUNCTIONS ########################################
-##############################################################################
-
-def filter_high_iou_boxes(boxes, classes, scores, iou_threshold=0.1):
-    """Further filter out boxes that have high overlap even after NMS."""
-    keep = []
-    for i, box in enumerate(boxes):
-        if all(calculate_iou(box, boxes[j]) < iou_threshold for j in keep):
-            keep.append(i)
-    return boxes[keep], classes[keep], scores[keep]
-
-def calculate_iou(box1, box2):
-    """Calculate IoU between two bounding boxes [x1, y1, x2, y2]."""
-    x1 = max(box1[0], box2[0])
-    y1 = max(box1[1], box2[1])
-    x2 = min(box1[2], box2[2])
-    y2 = min(box1[3], box2[3])
-
-    # Compute intersection area
-    intersection = max(0, x2 - x1) * max(0, y2 - y1)
-    
-    # Compute area of each bounding box
-    area1 = (box1[2] - box1[0]) * (box1[3] - box1[1])
-    area2 = (box2[2] - box2[0]) * (box2[3] - box2[1])
-    
-    # Compute union area
-    union = area1 + area2 - intersection
-    
-    return intersection / union if union != 0 else 0
-
-def get_camera_size(camid):
-    camera_id = int(camid)
-    
-    # Find the corresponding size based on camera ID
-    if camera_id in camera_sizes['small']['cameras']:
-        width = camera_sizes['small']['width']
-        height = camera_sizes['small']['height']
-    elif camera_id in camera_sizes['large']['cameras']:
-        width = camera_sizes['large']['width']
-        height = camera_sizes['large']['height']
-    else:
-        raise ValueError(f"Camera ID {camera_id} from file '{filename}' is not predefined.")
-    
-    return width, height
-
-def load_lines_from_file(file_path):
+def load_lanes(lanes):
     lines = []
-    # Check if the file exists
-    if not os.path.exists(file_path):
-        # If the file doesn't exist, simply return an empty list or handle it as needed
-        return lines
 
-    with open(file_path, 'r') as file:
-        for line in file:
-            # Convert each line to a list of tuples, handling floating-point numbers
-            points = [tuple(map(float, pt.split(','))) for pt in line.strip().split()]
-            # Convert the list of tuples to a numpy array and ensure correct data type
-            lines.append(np.array(points, dtype=np.float32))
+    # Split the decoded string into lines
+    for line in lanes.strip().splitlines():
+        # Convert each line to a list of tuples, handling floating-point numbers
+        points = [tuple(map(float, pt.split(','))) for pt in line.strip().split()]
+        # Convert the list of tuples to a numpy array and ensure correct data type
+        lines.append(np.array(points, dtype=np.float32))
+
     return lines
 
 def get_vehicles_from_df(df):
@@ -241,74 +112,6 @@ def line_assignment_by_perpendicular_distance(centroid, lines):
 
     return closest_line, proj_coord, isValid
 
-# Function to get screen size
-def get_screen_size():
-    root = tk.Tk()
-    root.withdraw() 
-    width = root.winfo_screenwidth()
-    height = root.winfo_screenheight()
-    root.destroy()
-    return (width, height)
-
-def get_centroids_df(centroids_and_box, class_indx):
-    # Flatten the array and create a DataFrame
-    flattened_data = [[cen_x, cen_y, xmin, ymin, xmax, ymax] for [cen_x, cen_y], [xmin, ymin, xmax, ymax] in centroids_and_box]
-
-    # Create the DataFrame with headers
-    df = pd.DataFrame(flattened_data, columns=['cen_x', 'cen_y', 'xmin', 'ymin', 'xmax', 'ymax'])
-    df["class"] = class_indx
-    return df
-
-def calc_centroids(xy_array):
-    centroids_arr = []
-    centroids_and_box = []
-    for image in xy_array:
-        for box in image:
-            # 0 - xmin, 1 - ymin, 2 - xmax, 3 - ymax
-            xmin, ymin, xmax, ymax = box
-            cx = int((xmin + xmax) / 2)
-            cy = int((ymin + ymax) / 2)
-            centroids_arr.append([cx, cy])
-            centroids_and_box.append([[cx, cy] , [xmin, ymin, xmax, ymax]])
-    return centroids_arr, centroids_and_box
-
-def apply_yolo_nas_l(image_path):
-    # List of accepted labels
-    accepted_list = [0,1,2,3]  # Example labels that are accepted
-    filename = image_path
-    if filename.endswith(".jpg") or filename.endswith(".png"):  # Adjust based on your image file types
-        camera_idn, extension = os.path.splitext(os.path.basename(image_path))
-        xy_array = []
-        image_path = os.path.join(".", filename)
-        image = Image.open(image_path)
-        filtered_image = yolo_nas_l.predict(image, conf=0.25, iou=0.1)
-        
-        bboxes = []
-        class_indx = []
-        conf = []
-        pred = filtered_image.prediction
-        labels = pred.labels.astype(int)
-        class_indx2 = []
-        for index, label in enumerate(labels):
-            confi = pred.confidence.astype(float)[index]
-            if (label==0 and confi > 0.6) or (label==1 and confi > 0.5) or (label==2 and confi > 0.65) or (label==3 and confi > 0.35):
-                bboxes.append(pred.bboxes_xyxy[index])
-                class_indx2.append(label)
-                class_indx.append(translate.get(label))
-                conf.append(confi)
-        bboxes, class_indx, conf = filter_high_iou_boxes(np.array(bboxes), np.array(class_indx), np.array(conf), iou_threshold=0.5)
-        pred.bboxes_xyxy = np.array(bboxes) 
-        pred.labels = np.array(class_indx2)
-        pred.confidence = np.array(conf)
-        filtered_image.save(f"./models/queue_length/predict/predictions_image_{camera_idn}.jpg")
-            
-        # Update the filtered image with filtered detections
-        xy_array.append(np.array(bboxes))
-        centroids_arr, centroids_and_box = calc_centroids(xy_array)
-        df = get_centroids_df(centroids_and_box, class_indx)
-        
-        return df
-
 def draw_bbox_with_annotation(image, bbox, dist):
     """
     Draws the bounding box on the image and annotates the distance between the current 
@@ -333,7 +136,7 @@ def draw_queue(image, queue):
         cv2.rectangle(image, (x1, y1), (x2, y2), (255, 0, 255), 2)
     return image
 
-def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshold):
+def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshold, img_name):
     output_image = image
 
     # Sort the bounding boxes by their centroid's y-coordinate (cy)
@@ -415,7 +218,7 @@ def queue_length_top_to_bottom(bboxes, vehicle_properties, image, queue_threshol
     # print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
     return combined_queue
 
-def queue_length_bottom_to_top(bboxes, vehicle_properties, image, queue_threshold):
+def queue_length_bottom_to_top(bboxes, vehicle_properties, image, queue_threshold, img_name):
     output_image = image
 
     # Sort the bounding boxes by their centroid's y-coordinate (cy)
@@ -497,7 +300,7 @@ def queue_length_bottom_to_top(bboxes, vehicle_properties, image, queue_threshol
     # print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
     return combined_queue
 
-def queue_length_left_to_right(bboxes, vehicle_properties, image, queue_threshold):
+def queue_length_left_to_right(bboxes, vehicle_properties, image, queue_threshold, img_name):
     output_image = image
 
     # Sort the bounding boxes by their centroid's y-coordinate (cy)
@@ -579,7 +382,7 @@ def queue_length_left_to_right(bboxes, vehicle_properties, image, queue_threshol
     # print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
     return combined_queue
 
-def queue_length_right_to_left(bboxes, vehicle_properties, image, queue_threshold):
+def queue_length_right_to_left(bboxes, vehicle_properties, image, queue_threshold, img_name):
     output_image = image
 
     # Sort the bounding boxes by their centroid's y-coordinate (cy)
@@ -661,7 +464,7 @@ def queue_length_right_to_left(bboxes, vehicle_properties, image, queue_threshol
     # print("image saved at!!!", f"./results/output_image_{img_name}.jpg")
     return combined_queue
 
-def queue_length_right_to_left(bboxes, vehicle_properties, image, queue_threshold):
+def queue_length_right_to_left(bboxes, vehicle_properties, image, queue_threshold, img_name):
     output_image = image
 
     # Sort the bounding boxes by their centroid's y-coordinate (cy)
@@ -770,25 +573,26 @@ def read_bboxes(lanes_dict):
     
     return lanes_dict  # Return the dictionary of lanes
 
-def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold, direction):
+def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold, direction, img_name):
+    
     queue_lengths = {}
     # print(f"FUNCTION ENTERED FOR: {img_name}")
-   
+    
     # Process each lane's bounding boxes
     for lane_id, lane_bboxes in lane_data.items():
         queue_list = []
         # print("dir, lane", direction[lane_id-1], lane_id)
-        dir = direction[lane_id-1]
-        # dir = "up"
+        # dir = direction[lane_id-1]
+        dir = "up"
         # Determine the queue based on the direction
         if dir == "up":
-            queue_list = queue_length_top_to_bottom(lane_bboxes, vehicle_properties, image, queue_threshold)
+            queue_list = queue_length_top_to_bottom(lane_bboxes, vehicle_properties, image, queue_threshold, (img_name +"----"+ str(lane_id)))
             # print('queue_list')
-        elif dir == "down":
+        elif direction == "down":
             queue_list = queue_length_bottom_to_top(lane_bboxes, vehicle_properties, image, queue_threshold)
-        elif dir == "left":
+        elif direction == "left":
             queue_list = queue_length_left_to_right(lane_bboxes, vehicle_properties, image, queue_threshold)
-        elif dir == "right":
+        elif direction == "right":
             queue_list = queue_length_right_to_left(lane_bboxes, vehicle_properties, image, queue_threshold)
        
         # Store lane_id and queue length in the dictionary
@@ -796,116 +600,3 @@ def compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold,
         # cv2.imwrite(f"./predict/output_image_{img_name}.jpg", image) 
     
     return queue_lengths
-
-##############################################################################
-###########################DRIVER CODE########################################
-##############################################################################
-
-# input road
-# roadNum = input("Enter road ID: ")
-
-loaded_road_directions = {}
-with open(current_dir + "/models/queue_length/lane_directions.json", 'r') as file:
-    loaded_road_directions = json.load(file)
-
-# image_path = main_folder_dir + "centroidimages/" + roadNum + ".jpg"
-images = os.listdir( image_dir)
-traffic = []
-start = time.time()
-for imge in images:
-    if (imge.endswith(".jpg")):
-        image_path = image_dir + imge
-        info = os.path.splitext(os.path.basename(image_path))[0].split('_')
-        roadNum = info[0]
-        # dates = info[1]
-        # timed = info[2]
-        print(roadNum)
-        print(image_path)
-        test_image = cv2.imread(image_path)
-
-        lane_path = main_folder_dir + "v3result/manual2/lines/" + roadNum + ".txt"
-        lines = load_lines_from_file(lane_path)
-        width, height = get_camera_size(roadNum)
-
-        # draw lane lines on image
-        lane_id = 1
-        for line in lines:
-            midpoint_x = int((line[0][0] + line[1][0]) / 2)
-            midpoint_y = int((line[0][1] + line[1][1]) / 2)
-            cv2.putText(test_image,str(lane_id), (midpoint_x,midpoint_y), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-            line = line.reshape((-1, 1, 2)).astype(np.int32)
-            cv2.polylines(test_image, [line], isClosed=False, color=(255, 0, 0), thickness=2)
-            lane_id += 1
-
-        df = apply_yolo_nas_l(image_path)
-        centroids = get_vehicles_from_df(df)
-
-        result_dict = {}
-
-        # You can change the colors to ur liking 
-        color_dict = {
-            1: (0, 0, 255), # red = truck
-            2: (255, 0, 255), # pink = motorcycle
-            3: (255,182,193), # grey ish = car
-            4: (255, 255, 0) # neon blue = bus
-        }
-
-        for centroid in centroids:
-            coord = (centroid[0], centroid[1])
-            cv2.circle(test_image, coord, 5, (0, 200, 0), -1)
-            # This prints out the coordinates of the centroids on the image
-            cv2.putText(test_image,"(" + str(centroid[0]) +", " + str(centroid[1]) +")", (centroid[0] + 4, centroid[1] + 4), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-            centroid_line_assignment, projection, isValid = line_assignment_by_perpendicular_distance(coord, lines)
-            if isValid is True:
-                cv2.circle(test_image, (int(projection[0]), int(projection[1])), 5, color_dict.get(centroid[6]), -1)
-                grouping = result_dict.get(centroid_line_assignment)
-                if grouping is None:
-                    grouping = [centroid]
-                else:
-                    grouping.append(centroid)
-                result_dict.update({centroid_line_assignment: grouping})
-            else:
-                cv2.circle(test_image, coord, 3, (0,0,0), -1)
-
-        # for key in result_dict:
-        #     result_dict[key] = [arr.tolist() for arr in result_dict[key]]
-        # json_data = json.dumps(result_dict)
-        # print(json_data)
-        cv2.imwrite(f"./models/queue_length/queue/output_image_{os.path.splitext(imge)[0]}.jpg", test_image)
-        #Load labels
-        lane_data = read_bboxes(result_dict)
-        #Output queue length for each lane
-        queue_lengths= compute_queue_lengths(lane_data, test_image, vehicle_properties, queue_threshold, loaded_road_directions.get(str(roadNum)))
-        cv2.imwrite(f"./models/queue_length/results/output_image_{os.path.splitext(imge)[0]}.jpg", test_image)
-        print(queue_lengths)
-        # if not queue_lengths:
-        #     for laneid, lane_bboxes in lane_data.items():
-        #         traffic.append({"road_id":roadNum, "date":f"{dates}", "time":f"{timed}", "lane_id":laneid, "num_cars":0})
-        # else:
-        #     for laneid, lane_bboxes in lane_data.items():
-        #         traffic.append({"road_id":roadNum, "date":f"{dates}", "time":f"{timed}", "lane_id":laneid, "num_cars":queue_lengths.get(laneid) or 0})
-
-end = time.time()
-print(f"took this long in seconds for {len(images)} images: ", end - start)
-
-# csv_file_name = 'traffic.csv'
-
-# # Write to CSV file
-# with open(csv_file_name, mode='w', newline='') as csv_file:
-#     fieldnames = ["road_id", 'date', 'time', 'lane_id', 'num_cars']
-#     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-
-#     # Write the header
-#     writer.writeheader()
-
-#     # Write the data
-#     for row in traffic:
-#         writer.writerow(row)
-
-# print(f'Converted data written to {csv_file_name}')
-
-# json_file_name = 'traffic.json'
-
-# # Write the filtered data to a JSON file
-# with open(json_file_name, 'w') as json_file:
-#     json.dump(traffic, json_file, indent=4)  # indent for pretty printing

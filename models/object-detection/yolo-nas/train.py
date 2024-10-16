@@ -102,7 +102,7 @@ test_data = coco_detection_yolo_format_val(
 )
 
 #test metrics
-metrics=DetectionMetrics_050(score_thres=0.1, 
+metrics=DetectionMetrics_050(score_thres=0.5, 
                             top_k_predictions=300, 
                             num_cls=len(dataset_params['classes']), 
                             normalize_targets=True, 
@@ -112,7 +112,7 @@ metrics=DetectionMetrics_050(score_thres=0.1,
                                                                                     nms_threshold=0.7)
                             )
 metrics_50_95 = DetectionMetrics_050_095(
-    score_thres=0.1, 
+    score_thres=0.5, 
     top_k_predictions=300, 
     num_cls=len(dataset_params['classes']), 
     normalize_targets=True, 

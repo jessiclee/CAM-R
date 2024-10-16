@@ -85,14 +85,17 @@ lines = load_lines_from_file("C:/Users/Zhiyi/Desktop/FYP/newtraffic/v3result/man
 
 img = temp.copy()
 
-    # Draw all the saved polygons (detected and newly drawn)
+    # Draw all the saved polygons (detected and newly drawn)\
+lane_id = 1
 for line in lines:
     line = np.array(line)
-    
     line = line.reshape((-1, 1, 2)).astype(np.int32)
-    print(line)
     cv2.polylines(img, [line], isClosed=False, color=(255, 0, 0), thickness=2)
-    print("done")
+    coord1 = int((line[1][0][0] + line[0][0][0]) / 2)
+    coord2 = int((line[1][0][1] + line[0][0][1]) / 2)
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    cv2.putText(img, f"{lane_id}", (coord1 , coord2), font, 0.5, (255, 255, 255), 2, cv2.LINE_AA)
+    lane_id +=1
     
 cv2.namedWindow("image", cv2.WINDOW_NORMAL)
 screen_width, screen_height = get_screen_size()
