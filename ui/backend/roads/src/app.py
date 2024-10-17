@@ -12,12 +12,24 @@ os.environ['PYTHONUNBUFFERED'] = '1'
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = \
-        "mysql+mysqlconnector://root:root@localhost:3306" + '/roads'
+# app.config['SQLALCHEMY_DATABASE_URI'] = \
+#         "mysql+mysqlconnector://root:root@localhost:3306" + '/roads'
+# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_size': 100,
+#                                             'pool_recycle': 280}
+
+if os.environ.get('db_conn'):
+    app.config['SQLALCHEMY_DATABASE_URI'] = \
+            os.environ.get('db_conn') + '/roads'
+else:
+    # app.config['SQLALCHEMY_DATABASE_URI'] = \
+    #         'mysql+mysqlconnector://cs302:cs302@localhost:3306/events'
+    app.config['SQLALCHEMY_DATABASE_URI'] = \
+        'mysql+mysqlconnector://user:root@host.docker.internal:30000/roads'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_size': 100,
-                                            'pool_recycle': 280}
+                                           'pool_recycle': 280}
 
 db = SQLAlchemy(app)
 CORS(app)

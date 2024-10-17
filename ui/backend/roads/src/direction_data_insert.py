@@ -811,7 +811,7 @@ for (index, cams) in enumerate(data.items()):
     directions = cams[1]
     for index, direction in enumerate(directions):
         lane_id = index + 1
-        requests.post("http://127.0.0.1:3001/direction", data = {
+        requests.post("http://localhost:3001/direction", data = {
             "camera": camera,
             "lane": lane_id,
             "direction": direction

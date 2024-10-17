@@ -22,7 +22,24 @@ app = Flask(__name__)
 
 # Global Variable: Datamall API 
 header = {"AccountKey": datamall_credentials.key,"accept":'application/json'}
-url = 'http://datamall2.mytransport.sg/ltaodataservice/Traffic-Imagesv2'
+
+if os.environ.get('stage') == 'production-ecs':
+    density_url = os.environ.get('density_service_url')
+else:
+    density_url = os.environ.get('density_service_url_internal')
+
+if os.environ.get('stage') == 'production-ecs':
+    detection_url = os.environ.get('detection_service_url')
+else:
+    detection_url = os.environ.get('detection_service_url_internal')
+
+if os.environ.get('stage') == 'production-ecs':
+    roads_url = os.environ.get('roads_service_url')
+else:
+    roads_url = os.environ.get('roads_service_url_internal')
+
+datamall_url = os.environ.get('datamall_url')
+
 color_dict = {
             1: (0, 0, 255), # red = truck
             2: (255, 0, 255), # pink = motorcycle
@@ -110,7 +127,7 @@ def get_queue():
     try:
         for i in images.keys():
             image_bytes = images.get(i)
-            road_info = requests.get("http://127.0.0.1:3001/lane/" + str(i)).json()
+            road_info = requests.get(roads_url + "/lane/" + str(i)).json()
             width = road_info["data"]["width"]
             height = road_info["data"]["height"]
             lines = queue_methods.load_lanes(road_info["data"]["lanes"])
@@ -132,7 +149,7 @@ def get_queue():
                 lane_id += 1
             
             try:
-                queue_result =  requests.post("http://127.0.0.1:3003/predict", files={"image" : image_bytes}).json()
+                queue_result =  requests.post(detection_url + "/predict", files={"image" : image_bytes}).json()
                 if len(queue_result) == 0:
                     return jsonify(
                         {
@@ -165,7 +182,7 @@ def get_queue():
                 print(result_dict)
                 lane_data = queue_methods.read_bboxes(result_dict)
                 print(lane_data)
-                road_lane_directions = requests.get("http://127.0.0.1:3001/direction/" + str(i)).json()
+                road_lane_directions = requests.get(roads_url + "/direction/" + str(i)).json()
                 print(road_lane_directions)
                 queue_lengths= queue_methods.compute_queue_lengths(lane_data, image, vehicle_properties, queue_threshold, road_lane_directions, str(i))
                 queues[i] = queue_lengths
@@ -181,7 +198,8 @@ def get_queue():
     except Exception as e:
         return jsonify(
         {
-            'Internal Server Error': 'service call failed'
+            'Internal Server Error': 'service call failed',
+            'error': str(e)
         }
     ), 500
 
@@ -225,12 +243,13 @@ def get_density():
     try:
         for i in images.keys():
             image_bytes = images.get(i)
-            density_result =  requests.post("http://127.0.0.1:3000/predict", files={"image" : image_bytes})
+            density_result =  requests.post(density_url + "/predict", files={"image" : image_bytes})
             densities.update({i: density_result.content.decode('utf-8')})
     except Exception as e:
         return jsonify(
         {
-            'Internal Server Error': 'Density service call failed'
+            'Internal Server Error': 'Density service call failed',
+            'error': str(e)
         }
     ), 500
 
@@ -243,7 +262,7 @@ DATAMALL FUNCTIONS
 # return a dictionary of camera id and its respective image link
 def get_current_image(cam_id):
     # Call DataMall API
-    response = requests.get(url, headers=header)
+    response = requests.get(datamall_url, headers=header)
     API_Data = response.json() 
     try:
         image_detail = API_Data["value"]

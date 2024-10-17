@@ -3,12 +3,27 @@ from flask import Flask, request, jsonify
 from model import YOLO_NAS_L
 from io import BytesIO
 from PIL import Image
+import socket
 import os
 os.environ['PYTHONUNBUFFERED'] = '1'
 import pandas as pd
 
 app = Flask(__name__)
 model = YOLO_NAS_L('19.pth')
+
+# Checking if service is healthy
+@app.route("/health")
+def health_check():
+    hostname = socket.gethostname()
+    local_ip = socket.gethostbyname(hostname)
+
+    return jsonify(
+            {
+                "message": "Service is healthy.",
+                "service:": "detection",
+                "ip_address": local_ip
+            }
+    ), 200
 
 @app.route('/predict', methods=['POST'])
 def predict():

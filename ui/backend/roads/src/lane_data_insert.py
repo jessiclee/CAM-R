@@ -40,7 +40,7 @@ def get_camera_size(camid):
     return width, height
 
 def send_req(camera, road, width, height, longi, lat, lanes):
-    requests.post("http://127.0.0.1:3001/lane", data = {
+    return requests.post("http://localhost:3001/lane", data = {
             "camera": camera,
             "road": road,
             "width": width,
@@ -49,7 +49,8 @@ def send_req(camera, road, width, height, longi, lat, lanes):
             "lat": lat
         }, files = {
             "lanes": lanes
-            })
+            }).json()
+    
 
 lane_path = "C:/Users/Zhiyi/Desktop/FYP/newtraffic/v3result/manual2/lines/"
 info_path = "C:/Users/Zhiyi/Desktop/FYP/TrafficImages.csv"
@@ -65,4 +66,5 @@ for index, row in df.iterrows():
     lane_file_path = lane_path + str(camera) + ".txt"
     with open(lane_file_path, 'rb') as file:
         lanes = file.read()
-    send_req(camera, road, width, height, longi, lat, lanes)
+    print(camera)
+    print(send_req(camera, road, width, height, longi, lat, lanes))
