@@ -118,7 +118,7 @@ def get_queue():
         cam_id = data.get('id')
         # images return a dictionary of cameraid and its respective image link
         images = get_current_image(cam_id)
-        # if there is a 400 error in get_current_image, return bad request code
+        # if there is an error in get_current_image, return bad request code
         if type(images) == tuple:
             return images
 
@@ -235,7 +235,7 @@ def get_density():
         cam_id = data.get('id')
         # images return a dictionary of cameraid and its respective image link
         images = get_current_image(cam_id)
-        # if there is a 400 error in get_current_image, return bad request code
+        # if there is an error in get_current_image, return bad request code
         if type(images) == tuple:
             return images
     
@@ -290,7 +290,7 @@ def get_current_image(cam_id):
             {
                 'Error': 'Image Dict failed'
             }
-        ), 400
+        ), 500
 
 # get image bytes
 def download(image_url, cameraID):  
@@ -310,7 +310,7 @@ def download(image_url, cameraID):
             {
                 'Error': 'Image Download Failed'
             }
-        ), 400
+        ), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3002, debug = True)
