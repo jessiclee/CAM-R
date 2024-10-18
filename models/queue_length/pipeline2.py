@@ -293,12 +293,12 @@ def apply_yolo_nas_l(image_path):
             confi = pred.confidence.astype(float)[index]
             if (label==0 and confi > 0.6) or (label==1 and confi > 0.5) or (label==2 and confi > 0.65) or (label==3 and confi > 0.35):
                 bboxes.append(pred.bboxes_xyxy[index])
-                class_indx2.append(label)
-                class_indx.append(translate.get(label))
+                class_indx.append(label)
+                # class_indx.append(translate.get(label))
                 conf.append(confi)
         bboxes, class_indx, conf = filter_high_iou_boxes(np.array(bboxes), np.array(class_indx), np.array(conf), iou_threshold=0.5)
         pred.bboxes_xyxy = np.array(bboxes) 
-        pred.labels = np.array(class_indx2)
+        pred.labels = np.array(class_indx)
         pred.confidence = np.array(conf)
         filtered_image.save(f"./models/queue_length/predict/predictions_image_{camera_idn}.jpg")
             
