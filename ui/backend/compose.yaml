@@ -1,0 +1,83 @@
+
+services:
+
+  ####################################
+  # MySQL Container: Roads Database
+  ####################################
+  mysqldb:
+    image: 'mysql:latest'
+    env_file:
+      - 'roads.env'
+    ports:
+      - '30000:3306'
+    networks:
+      - springapimysql-net 
+      - camr-network
+
+  ####################################
+  # Microservice: Roads
+  ####################################
+  roadsservice:
+      build:
+        context: ./roads
+        dockerfile: Dockerfile
+      restart: always
+      ports:
+        - 3001:3001
+      env_file:
+      - 'dev.env'
+      networks:
+      - camr-network
+      - springapimysql-net
+      depends_on:
+        - mysqldb
+
+  ####################################
+  # Microservice: Metrics
+  ####################################
+  metricsservice:
+    build: ./metrics
+    restart: always
+    ports:
+      - 3002:3002
+    networks:
+      - camr-network
+    container_name: metricsservice
+    env_file:
+      - 'dev.env'
+
+  ####################################
+  # Microservice: Density
+  ####################################
+  densityservice:
+    build: ./density
+    restart: always
+    ports:
+      - 3000:3000
+    env_file:
+      - 'dev.env'
+    networks:
+      - camr-network
+
+
+  ####################################
+  # Microservice: Detection
+  ####################################
+  detectionservice:
+    build: ./detection
+    restart: always
+    ports:
+      - 3003:3003
+    container_name: detectionservice
+    env_file:
+      - 'dev.env'
+    networks:
+      - camr-network
+
+
+  ####################################
+  # Networks
+  ####################################
+networks:
+  springapimysql-net:
+  camr-network:

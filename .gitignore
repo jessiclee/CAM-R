@@ -21,3 +21,5 @@ checkpoints/
 *.pth
 *.pyc
 ui/backend/metrics/src/datamall_credentials.py
+*.env
+*.csv

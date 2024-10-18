@@ -19,7 +19,7 @@ def default_check():
     return jsonify(
             {
                 "message": "Service is reachable.",
-                "service:": "event",
+                "service:": "density",
                 "ip_address": local_ip
             }
     ), 200
@@ -32,7 +32,7 @@ def health_check():
     return jsonify(
             {
                 "message": "Service is healthy.",
-                "service:": "event",
+                "service:": "density",
                 "ip_address": local_ip
             }
     ), 200
