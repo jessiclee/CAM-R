@@ -53,12 +53,15 @@ const Widgets = React.lazy(() => import('./views/widgets/Widgets'))
 
 // Custom
 const Metrics = React.lazy(() => import('./views/metrics/Metrics'))
+const NotFound = React.lazy(() => import('./views/pages/page404/Page404'))
 
 
 const routes = [
   { path: '/', exact: true, name: 'Home' },
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
   { path: '/dashboard/metrics', name: 'Metrics', element: Metrics },
+  { path: '*', name: '404 Not Found', element: NotFound },
+
   { path: '/theme', name: 'Theme', element: Colors, exact: true },
   { path: '/theme/colors', name: 'Colors', element: Colors },
   { path: '/theme/typography', name: 'Typography', element: Typography },

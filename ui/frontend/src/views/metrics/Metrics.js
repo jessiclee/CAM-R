@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import DensityMeter from './DensityMeter';
 import QueueTable from './QueueTable';
 import predictImage from '../../assets/images/queue.jpg'
@@ -25,6 +25,9 @@ import {
 
 
 const Metrics = () => {
+    // Not valid number navigation
+    const navigate = useNavigate();
+
     // Getting specific camera ID information
     const location = useLocation();
     const searchParams = new URLSearchParams(location.search);
@@ -32,9 +35,22 @@ const Metrics = () => {
 
     // Timestamp for Image
     const [timestamp, setTimestamp] = useState('');
+
+    // Queue Data
     const [queueData, setQueueData] = useState([]);
 
     useEffect(() => {
+
+        // Ensure only strings are used
+        const numericID = Number(id);
+        if (isNaN(numericID) || numericID <= 0) {
+        console.log('Redirecting due to invalid number');
+        setTimeout(() => {
+            navigate('/');
+        }, 200); // Redirect after 2 seconds
+        return;
+        }
+
         const localTimestamp = new Date().toLocaleString();
         setTimestamp(localTimestamp);
 
@@ -49,9 +65,6 @@ const Metrics = () => {
             }));
         }
     
-        // console.log(transformedData)
-        // Update the state
-        // setQueueData(transformedData);
         setQueueData(transformedData)    
     }, []);
     // Image
