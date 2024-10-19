@@ -40,7 +40,11 @@ const Metrics = () => {
     // Queue Length
     // Density
     // Meter
-    const currDensity = "Low"  //hard code first
+
+    // MOCK THE API RETRIEVAL FIRST
+    const densityJson = {2703:"Low"}
+    const currDensity = densityJson[id]
+    // const currDensity = "Low"  //hard code first
     const [level, setLevel] = useState(currDensity);
 
     return (
