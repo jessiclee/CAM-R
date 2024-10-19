@@ -119,6 +119,21 @@ const Metrics = () => {
                         </CCardBody>
                     </CCard>
                 </CCol>
+                <CCol xs={12}>
+                    <CCard className="mb-4">
+                        <CCardHeader>
+                            <strong>Traffic Profiles</strong>
+                            <CTooltip
+                                content="Information is updated on a weekly basis"
+                                placement="bottom"
+                            >
+                                <i class="fas fa-info-circle" style={{ float: "right" }}/>
+                            </CTooltip>
+                        </CCardHeader>
+                        <CCardBody>
+                        </CCardBody>
+                    </CCard>
+                </CCol>
             </CRow>
 
         </>
