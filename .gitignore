@@ -26,4 +26,22 @@ checkpoints/
 ui/backend/metrics/src/datamall_credentials.py
 *.env
 *.csv
+
+# FRONTEND
 ui/frontend/node_modules
+ui/frontend/node_modules
+ui/frontend/package-lock.json
+ui/frontend/yarn.lock
+ui/frontend/coverage
+ui/frontend/build
+ui/frontend/.eslintcache
+ui/frontend/.DS_Store
+ui/frontend/.idea
+ui/frontend/.env.local
+ui/frontend/.env.development.local
+ui/frontend/.env.test.local
+ui/frontend/.env.production.local
+
+ui/frontend/npm-debug.log*
+ui/frontend/yarn-debug.log*
+ui/frontend/yarn-error.log*
