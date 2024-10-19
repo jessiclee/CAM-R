@@ -4,8 +4,8 @@ CREATE TABLE lane (
     road VARCHAR(100) NOT NULL,
     width BIGINT NOT NULL,
     height BIGINT NOT NULL,
-    longi FLOAT(10) NOT NULL,
-    lat FLOAT(10) NOT NULL,
+    longi FLOAT(50) NOT NULL,
+    lat FLOAT(50) NOT NULL,
     lanes LONGBLOB NOT NULL
 );
 
