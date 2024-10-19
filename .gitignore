@@ -1,4 +1,7 @@
-*.jpg
+image_retrieval/**/*.jpg
+models/**/*.jpg
+runs/**/*.jpg
+ui/backend/**/*.jpg
 *.json
 image_retrieval/datamall_credentials.py
 image_retrieval/__pycache__
@@ -23,3 +26,4 @@ checkpoints/
 ui/backend/metrics/src/datamall_credentials.py
 *.env
 *.csv
+ui/frontend/node_modules
