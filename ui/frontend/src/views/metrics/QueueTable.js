@@ -1,20 +1,12 @@
 import React, { useState } from "react";
 
-const QueueTable = () => {
-  // hardcode first
-  const initialData = [
-    { laneID: 1, queue_length: 30 },
-    { laneID: 2, queue_length: 45 },
-    { laneID: 3, queue_length: 50 },
-    { laneID: 4, queue_length: 25 },
-    { laneID: 5, queue_length: 60 },
-    { laneID: 6, queue_length: 35 },
-    { laneID: 7, queue_length: 40 },
-    { laneID: 8, queue_length: 55 },
-  ];
+const QueueTable = ({ queueData }) => {
 
-  // States
-  const [data, setData] = useState(initialData); // Data to display
+  // Set the initial data from props
+  if(!queueData || queueData.length === 0){
+    return <p>No queue data available</p>;
+  }
+  const [data, setData] = useState(queueData);
   const [currentPage, setCurrentPage] = useState(1); // Current page
   const [rowsPerPage] = useState(4); // Rows per page
   const [sortDirection, setSortDirection] = useState(false); // Sorting direction
@@ -52,13 +44,13 @@ const QueueTable = () => {
               onClick={() => sortTable("laneID")}
               style={{ cursor: "pointer", padding: "10px", borderBottom: "1px solid #ddd" }}
             >
-              Lane ID
+              <i className="fa-solid fa-sort"></i> Lane ID
             </th>
             <th
               onClick={() => sortTable("queue_length")}
               style={{ cursor: "pointer", padding: "10px", borderBottom: "1px solid #ddd" }}
             >
-              Queue Length
+              <i className="fa-solid fa-sort"></i> Queue Length
             </th>
           </tr>
         </thead>

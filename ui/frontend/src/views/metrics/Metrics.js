@@ -32,9 +32,27 @@ const Metrics = () => {
 
     // Timestamp for Image
     const [timestamp, setTimestamp] = useState('');
+    const [queueData, setQueueData] = useState([]);
+
     useEffect(() => {
         const localTimestamp = new Date().toLocaleString();
         setTimestamp(localTimestamp);
+
+        const apiQueue = { '2703': { 3: 2, 2: 1, 1: 1 } };
+        let transformedData = []
+
+        if (apiQueue && apiQueue[id]) {
+            // Transform the API data into the format for QueueTable
+            transformedData = Object.entries(apiQueue[id]).map(([laneID, queueLength]) => ({
+            laneID: Number(laneID),
+            queue_length: queueLength,
+            }));
+        }
+    
+        // console.log(transformedData)
+        // Update the state
+        // setQueueData(transformedData);
+        setQueueData(transformedData)    
     }, []);
     // Image
     // Queue Length
@@ -86,7 +104,8 @@ const Metrics = () => {
                             <strong>Queue Length</strong>
                         </CCardHeader>
                         <CCardBody>
-                            <QueueTable />
+                            {/* {queueData} */}
+                            <QueueTable queueData={queueData}/>
                         </CCardBody>
                     </CCard>
                 </CCol>
