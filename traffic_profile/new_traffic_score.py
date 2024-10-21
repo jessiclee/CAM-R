@@ -18,7 +18,7 @@ lane_groupings = {}
 total_counts = []
 
 # Load lane grouping from JSON file
-with open("/lane_groupings.json", 'r') as lane_file:
+with open("lane_groupings.json", 'r') as lane_file:
     lane_groupings = json.load(lane_file)
 
 # Step 2: First pass: Calculate total_count and store only necessary results

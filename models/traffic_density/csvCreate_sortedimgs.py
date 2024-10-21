@@ -12,7 +12,7 @@ with open(output_csv, mode='w', newline='') as file:
     writer = csv.writer(file)
     
     # Write the header row
-    writer.writerow(['Class', 'Image Name'])
+    writer.writerow(['Class', 'Image Name']) 
     
     # Loop through each class folder (high, medium, low)
     for class_name in os.listdir(sorted_photos_dir):
