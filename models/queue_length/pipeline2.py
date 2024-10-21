@@ -288,7 +288,7 @@ def apply_yolo_nas_l(image_path):
         conf = []
         pred = filtered_image.prediction
         labels = pred.labels.astype(int)
-        class_indx2 = []
+        # class_indx2 = []
         for index, label in enumerate(labels):
             confi = pred.confidence.astype(float)[index]
             if (label==0 and confi > 0.6) or (label==1 and confi > 0.5) or (label==2 and confi > 0.65) or (label==3 and confi > 0.35):
