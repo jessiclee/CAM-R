@@ -888,24 +888,24 @@ for imge in images:
 end = time.time()
 print(f"took this long in seconds for {len(images)} images: ", end - start)
 
-# csv_file_name = 'traffic.csv'
+csv_file_name = 'traffic.csv'
 
 # # Write to CSV file
-# with open(csv_file_name, mode='w', newline='') as csv_file:
-#     fieldnames = ["road_id", 'date', 'time', 'lane_id', 'num_cars']
-#     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+with open(csv_file_name, mode='w', newline='') as csv_file:
+    fieldnames = ["road_id", 'date', 'time', 'lane_id', 'num_cars']
+    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
 
 #     # Write the header
-#     writer.writeheader()
+    writer.writeheader()
 
 #     # Write the data
-#     for row in traffic:
-#         writer.writerow(row)
+    for row in traffic:
+        writer.writerow(row)
 
-# print(f'Converted data written to {csv_file_name}')
+print(f'Converted data written to {csv_file_name}')
 
-# json_file_name = 'traffic.json'
+json_file_name = 'traffic.json'
 
-# # Write the filtered data to a JSON file
-# with open(json_file_name, 'w') as json_file:
-#     json.dump(traffic, json_file, indent=4)  # indent for pretty printing
+# Write the filtered data to a JSON file
+with open(json_file_name, 'w') as json_file:
+    json.dump(traffic, json_file, indent=4)  # indent for pretty printing
