@@ -288,17 +288,17 @@ def apply_yolo_nas_l(image_path):
         conf = []
         pred = filtered_image.prediction
         labels = pred.labels.astype(int)
-        class_indx2 = []
+        # class_indx2 = []
         for index, label in enumerate(labels):
             confi = pred.confidence.astype(float)[index]
             if (label==0 and confi > 0.6) or (label==1 and confi > 0.5) or (label==2 and confi > 0.65) or (label==3 and confi > 0.35):
                 bboxes.append(pred.bboxes_xyxy[index])
-                class_indx2.append(label)
-                class_indx.append(translate.get(label))
+                class_indx.append(label)
+                # class_indx.append(translate.get(label))
                 conf.append(confi)
         bboxes, class_indx, conf = filter_high_iou_boxes(np.array(bboxes), np.array(class_indx), np.array(conf), iou_threshold=0.5)
         pred.bboxes_xyxy = np.array(bboxes) 
-        pred.labels = np.array(class_indx2)
+        pred.labels = np.array(class_indx)
         pred.confidence = np.array(conf)
         filtered_image.save(f"./models/queue_length/predict/predictions_image_{camera_idn}.jpg")
             
@@ -888,24 +888,24 @@ for imge in images:
 end = time.time()
 print(f"took this long in seconds for {len(images)} images: ", end - start)
 
-# csv_file_name = 'traffic.csv'
+csv_file_name = 'traffic.csv'
 
 # # Write to CSV file
-# with open(csv_file_name, mode='w', newline='') as csv_file:
-#     fieldnames = ["road_id", 'date', 'time', 'lane_id', 'num_cars']
-#     writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+with open(csv_file_name, mode='w', newline='') as csv_file:
+    fieldnames = ["road_id", 'date', 'time', 'lane_id', 'num_cars']
+    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
 
 #     # Write the header
-#     writer.writeheader()
+    writer.writeheader()
 
 #     # Write the data
-#     for row in traffic:
-#         writer.writerow(row)
+    for row in traffic:
+        writer.writerow(row)
 
-# print(f'Converted data written to {csv_file_name}')
+print(f'Converted data written to {csv_file_name}')
 
-# json_file_name = 'traffic.json'
+json_file_name = 'traffic.json'
 
-# # Write the filtered data to a JSON file
-# with open(json_file_name, 'w') as json_file:
-#     json.dump(traffic, json_file, indent=4)  # indent for pretty printing
+# Write the filtered data to a JSON file
+with open(json_file_name, 'w') as json_file:
+    json.dump(traffic, json_file, indent=4)  # indent for pretty printing

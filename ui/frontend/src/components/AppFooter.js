@@ -8,13 +8,13 @@ const AppFooter = () => {
         <a href="https://www.smu.edu.sg/" target="_blank" rel="noopener noreferrer">
           AI-Driven Image Analysis for Urban Traffic Insights
         </a>
-        <span className="ms-1">&copy; CAM-R</span>
+        <span className="ms-1">&copy; SMU CS480 CAM-R</span>
       </div>
       <div className="ms-auto">
-        <span className="me-1">Powered by</span>
-        <a href="https://coreui.io/react" target="_blank" rel="noopener noreferrer">
+        <span className="me-1">Disclaimer: Metrics are algorithmically derived by AI and may not be accurate</span>
+        {/* <a href="https://coreui.io/react" target="_blank" rel="noopener noreferrer">
           CoreUI React Admin &amp; Dashboard Template
-        </a>
+        </a> */}
       </div>
     </CFooter>
   )

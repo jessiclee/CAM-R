@@ -7,7 +7,7 @@ def create_data(batch_size=32):
     # Define the directories for train, validation, and test datasets
     train_dir = "split_data/train"  # Path to training data
     val_dir = "split_data/val"      # Path to validation data
-    test_dir = "split_data/test"    # Path to test data
+    test_dir = "C:/dDrive/CS480-fyp/traffic_density/demo"    # Path to test data
 
     # Define the transformation for all datasets (no augmentation)
     transform = transforms.Compose([

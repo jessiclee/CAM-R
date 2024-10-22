@@ -1,5 +1,6 @@
 import React from 'react'
 import { useSelector, useDispatch } from 'react-redux'
+import sideBarImage from "../assets/images/lta_logo_2024.png"
 
 import {
   CCloseButton,
@@ -37,6 +38,11 @@ const AppSidebar = () => {
     >
       <CSidebarHeader className="border-bottom">
         <CSidebarBrand to="/">
+          <img
+            src={sideBarImage}
+            alt="Predicted Image"
+            style={{ width: "100%", height: "auto" }}
+          />
           {/* <CIcon customClassName="sidebar-brand-full" icon={logo} height={32} /> */}
           {/* <CIcon customClassName="sidebar-brand-narrow" icon={sygnet} height={32} /> */}
         </CSidebarBrand>
