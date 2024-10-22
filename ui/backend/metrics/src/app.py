@@ -3,6 +3,7 @@ Metrics Microservice
 SUMMARY: Computation of queue length and traffic density
 """
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import os
 import requests
 import socket
@@ -26,19 +27,30 @@ header = {"AccountKey": datamall_credentials.key,"accept":'application/json'}
 if os.environ.get('stage') == 'production-ecs':
     density_url = os.environ.get('density_service_url')
 else:
-    density_url = "http://localhost:3000"
-
+    # density_url = os.environ.get('density_service_url_internal')
+    density_url = "http://localhost:3004"
+    
 if os.environ.get('stage') == 'production-ecs':
     detection_url = os.environ.get('detection_service_url')
 else:
-    detection_url = "http://localhost:3003"
+    # detection_url = os.environ.get('detection_service_url_internal')
+    detection_url="http://localhost:3003"
 
 if os.environ.get('stage') == 'production-ecs':
     roads_url = os.environ.get('roads_service_url')
 else:
-    roads_url = "http://localhost:3001"
+    # roads_url = os.environ.get('roads_service_url_internal')
+    roads_url="http://localhost:3001"
 
+
+# datamall_url = os.environ.get('datamall_url')
 datamall_url = 'http://datamall2.mytransport.sg/ltaodataservice/Traffic-Imagesv2'
+frontend_url = "http://localhost:3000"
+
+CORS(app, resources={
+    r"/density": {"origins": frontend_url, "methods": ["POST"]},
+    r"/get_queue": {"origins": frontend_url, "methods": ["POST"]},
+})
 
 color_dict = {
             1: (0, 0, 255), # red = truck
@@ -188,6 +200,7 @@ def get_queue():
                 queues[i] = queue_lengths
                 
                 #save image locally
+                # cv2.imwrite("C:/Users/Jess/Desktop/School/FYP/CAM-R/ui/backend" + str(i) + ".jpg", image)
                 cv2.imwrite("C:/Users/Zhiyi/Desktop/FYP/newtraffic/backend/" + str(i) + ".jpg", image)
 
                 traffic_images[i] = image.tolist()

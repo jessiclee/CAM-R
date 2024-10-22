@@ -25,7 +25,6 @@ import {
 
 
 const Metrics = () => {
-    // Not valid number navigation
     const navigate = useNavigate();
 
     // Getting specific camera ID information
@@ -39,20 +38,52 @@ const Metrics = () => {
     // Queue Data
     const [queueData, setQueueData] = useState([]);
 
+    const [density_res, set_density_res] = useState(null);
+    const [currDensity, setCurrDensity] = useState('N.A.');
+
+    // Function to handle the API call for density
+    const postDensity = async () => {
+        const density_url = "http://localhost:3002/density";
+        const density_data = { id: [id] };
+
+        try {
+            const response = await fetch(density_url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(density_data),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status}`);
+            }
+
+            const result = await response.json();
+            set_density_res(result);
+            console.log(result)
+        } catch (error) {
+            console.error('Error making the POST request to the density service:', error);
+        }
+    };
+
+
     useEffect(() => {
 
         // Ensure only strings are used
         const numericID = Number(id);
         if (isNaN(numericID) || numericID <= 0) {
-        console.log('Redirecting due to invalid number');
-        setTimeout(() => {
-            navigate('/');
-        }, 200); // Redirect after 2 seconds
-        return;
+            console.log('Redirecting due to invalid number');
+            setTimeout(() => {
+                navigate('/');
+            }, 200); // Redirect after 2 seconds
+            return;
         }
 
         const localTimestamp = new Date().toLocaleString();
         setTimestamp(localTimestamp);
+
+        postDensity();
 
         const apiQueue = { '2703': { 3: 2, 2: 1, 1: 1 } };
         let transformedData = []
@@ -60,29 +91,30 @@ const Metrics = () => {
         if (apiQueue && apiQueue[id]) {
             // Transform the API data into the format for QueueTable
             transformedData = Object.entries(apiQueue[id]).map(([laneID, queueLength]) => ({
-            laneID: Number(laneID),
-            queue_length: queueLength,
+                laneID: Number(laneID),
+                queue_length: queueLength,
             }));
         }
-    
-        setQueueData(transformedData)    
+
+        setQueueData(transformedData)
     }, []);
+
+    // Update Density
+    useEffect(() => {
+        if (density_res && density_res[id]) {
+          setCurrDensity(density_res[id]);
+        }
+      }, [density_res, id]);
+
     // Image
     // Queue Length
-    // Density
     // Meter
-
-    // MOCK THE API RETRIEVAL FIRST
-    const densityJson = {2703:"Low"}
-    const currDensity = densityJson[id]
-    // const currDensity = "Low"  //hard code first
-    const [level, setLevel] = useState(currDensity);
 
     return (
         <>
             <h1>Metrics: {id}</h1>
             <CRow>
-                <CCol xs={8}>
+                <CCol xs={5}>
                     <CCard className="mb-4">
                         <CCardHeader>
                             <strong>Current View @ {timestamp}</strong>
@@ -90,7 +122,7 @@ const Metrics = () => {
                                 content="Purple boxes are the longest lanes detected. Follows the invisible snake theory."
                                 placement="bottom"
                             >
-                                <i class="fas fa-info-circle" style={{ float: "right" }}/>
+                                <i class="fas fa-info-circle" style={{ float: "right" }} />
                             </CTooltip>
                         </CCardHeader>
                         <CCardBody>
@@ -104,10 +136,14 @@ const Metrics = () => {
                         </CCardBody>
                     </CCard>
                 </CCol>
-                <CCol xs={4}>
+                <CCol xs={5}>
                     <CCard className="mb-12">
                         <CCardBody>
                             Related Roads
+                            <QueueTable queueData={queueData} />
+                            {/* <DensityMeter level={level} /> */}
+                            <DensityMeter level={currDensity} />
+
                         </CCardBody>
                     </CCard>
                 </CCol>
@@ -118,7 +154,7 @@ const Metrics = () => {
                         </CCardHeader>
                         <CCardBody>
                             {/* {queueData} */}
-                            <QueueTable queueData={queueData}/>
+                            <QueueTable queueData={queueData} />
                         </CCardBody>
                     </CCard>
                 </CCol>
@@ -128,7 +164,7 @@ const Metrics = () => {
                             <strong>Traffic Density</strong>
                         </CCardHeader>
                         <CCardBody>
-                            <DensityMeter level={level} />
+                            {/* <DensityMeter level={level} /> */}
                         </CCardBody>
                     </CCard>
                 </CCol>
@@ -140,7 +176,7 @@ const Metrics = () => {
                                 content="Information is updated on a weekly basis"
                                 placement="bottom"
                             >
-                                <i class="fas fa-info-circle" style={{ float: "right" }}/>
+                                <i class="fas fa-info-circle" style={{ float: "right" }} />
                             </CTooltip>
                         </CCardHeader>
                         <CCardBody>
