@@ -26,19 +26,19 @@ header = {"AccountKey": datamall_credentials.key,"accept":'application/json'}
 if os.environ.get('stage') == 'production-ecs':
     density_url = os.environ.get('density_service_url')
 else:
-    density_url = os.environ.get('density_service_url_internal')
+    density_url = "http://localhost:3000"
 
 if os.environ.get('stage') == 'production-ecs':
     detection_url = os.environ.get('detection_service_url')
 else:
-    detection_url = os.environ.get('detection_service_url_internal')
+    detection_url = "http://localhost:3003"
 
 if os.environ.get('stage') == 'production-ecs':
     roads_url = os.environ.get('roads_service_url')
 else:
-    roads_url = os.environ.get('roads_service_url_internal')
+    roads_url = "http://localhost:3001"
 
-datamall_url = os.environ.get('datamall_url')
+datamall_url = 'http://datamall2.mytransport.sg/ltaodataservice/Traffic-Imagesv2'
 
 color_dict = {
             1: (0, 0, 255), # red = truck
