@@ -2,7 +2,9 @@ image_retrieval/**/*.jpg
 models/**/*.jpg
 runs/**/*.jpg
 ui/backend/**/*.jpg
-*.json
+models/**/*.json
+runs/**/*.json
+ui/backend/**/*.json
 image_retrieval/datamall_credentials.py
 image_retrieval/__pycache__
 image_retrieval/__pycache__/
