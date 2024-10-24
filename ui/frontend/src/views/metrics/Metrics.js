@@ -25,25 +25,63 @@ import {
 
 
 const Metrics = () => {
-    const navigate = useNavigate();
-
     // Getting specific camera ID information
     const location = useLocation();
     const searchParams = new URLSearchParams(location.search);
     const id = searchParams.get('id');
 
+    // Navigate befor computing is done
+    const navigate = useNavigate();
+    useEffect(() => {
+        const numericID = Number(id);
+        if (isNaN(numericID) || numericID <= 0) {
+            console.log('Redirecting due to invalid number');
+            setTimeout(() => {
+                navigate('/');
+            }, 200);
+            return;
+        }
+    }, []);
+
     // Timestamp for Image
     const [timestamp, setTimestamp] = useState('');
 
+    // Base URL
+    const metrics_base_url = "http://localhost:3002/"
+    
     // Queue Data
     const [queueData, setQueueData] = useState([]);
+    const [currQueue, setCurrQueue] = useState([]);
+    const postQueue = async () => {
+        const queue_url = metrics_base_url + "get_queue";
+        const queue_data = { id: [id] };
 
+        try {
+            const response = await fetch(queue_url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(queue_data),
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error: ${response.status}`);
+            }
+
+            const result = await response.json();
+            console.log(result)
+            setQueueData(result['queues']);
+        } catch (error) {
+            console.error('Error making the POST request to the get_queue service:', error);
+        }
+    };
+
+    // Density Data
     const [density_res, set_density_res] = useState(null);
     const [currDensity, setCurrDensity] = useState('N.A.');
-
-    // Function to handle the API call for density
     const postDensity = async () => {
-        const density_url = "http://localhost:3002/density";
+        const density_url = metrics_base_url + "density";
         const density_data = { id: [id] };
 
         try {
@@ -61,54 +99,43 @@ const Metrics = () => {
 
             const result = await response.json();
             set_density_res(result);
-            console.log(result)
         } catch (error) {
             console.error('Error making the POST request to the density service:', error);
         }
     };
 
-
     useEffect(() => {
-
-        // Ensure only strings are used
-        const numericID = Number(id);
-        if (isNaN(numericID) || numericID <= 0) {
-            console.log('Redirecting due to invalid number');
-            setTimeout(() => {
-                navigate('/');
-            }, 200); // Redirect after 2 seconds
-            return;
-        }
 
         const localTimestamp = new Date().toLocaleString();
         setTimestamp(localTimestamp);
 
+        // Send API requests
         postDensity();
+        postQueue();
 
-        const apiQueue = { '2703': { 3: 2, 2: 1, 1: 1 } };
-        let transformedData = []
-
-        if (apiQueue && apiQueue[id]) {
-            // Transform the API data into the format for QueueTable
-            transformedData = Object.entries(apiQueue[id]).map(([laneID, queueLength]) => ({
-                laneID: Number(laneID),
-                queue_length: queueLength,
-            }));
-        }
-
-        setQueueData(transformedData)
     }, []);
 
     // Update Density
     useEffect(() => {
         if (density_res && density_res[id]) {
-          setCurrDensity(density_res[id]);
+            setCurrDensity(density_res[id]);
         }
-      }, [density_res, id]);
+    }, [density_res, id]);
 
-    // Image
-    // Queue Length
-    // Meter
+    // Update Queue
+    useEffect(() => {
+        let transformedQueueData = []
+
+        if (queueData && queueData[id]) {
+            // Transform the API data into the format for QueueTable
+            transformedQueueData = Object.entries(queueData[id]).map(([laneID, queueLength]) => ({
+                laneID: Number(laneID),
+                queue_length: queueLength,
+            }));
+
+            setCurrQueue(transformedQueueData);
+        }
+    }, [queueData, id]);
 
     return (
         <>
@@ -140,8 +167,7 @@ const Metrics = () => {
                     <CCard className="mb-12">
                         <CCardBody>
                             Related Roads
-                            <QueueTable queueData={queueData} />
-                            {/* <DensityMeter level={level} /> */}
+                            <QueueTable queueData={currQueue} />
                             <DensityMeter level={currDensity} />
 
                         </CCardBody>
@@ -154,7 +180,7 @@ const Metrics = () => {
                         </CCardHeader>
                         <CCardBody>
                             {/* {queueData} */}
-                            <QueueTable queueData={queueData} />
+                            {/* <QueueTable queueData={queueData} /> */}
                         </CCardBody>
                     </CCard>
                 </CCol>

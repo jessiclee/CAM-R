@@ -2,7 +2,7 @@ import React from "react";
 import ReactSpeedometer from "react-d3-speedometer";
 
 const DensityMeter = ({ level }) => {
-    // Map the level to a numeric value for the pointer
+
     const getLevelValue = (level) => {
         switch (level) {
             case "Low":
@@ -31,7 +31,9 @@ const DensityMeter = ({ level }) => {
                 currentValueText="" // Hides the default current value text
                 valueTextFontSize="0" // Hides the value inside the gauge
                 labelFontSize="0" // Hides all numeric labels (0, 50, 100)
-                height={160}
+                height={120}
+                width={230} 
+                needleHeightRatio={0.8}
             />
             <h3>{level}</h3>
         </div>
