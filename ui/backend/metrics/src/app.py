@@ -10,6 +10,7 @@ import socket
 import datamall_credentials
 import pandas as pd
 import queue_methods
+import base64
 import cv2
 from io import BytesIO
 from PIL import Image
@@ -201,9 +202,12 @@ def get_queue():
                 
                 #save image locally
                 # cv2.imwrite("C:/Users/Jess/Desktop/School/FYP/CAM-R/ui/backend" + str(i) + ".jpg", image)
-                cv2.imwrite("C:/Users/Zhiyi/Desktop/FYP/newtraffic/backend/" + str(i) + ".jpg", image)
+                # cv2.imwrite("C:/Users/Zhiyi/Desktop/FYP/newtraffic/backend/" + str(i) + ".jpg", image)
 
-                traffic_images[i] = image.tolist()
+                # traffic_images[i] = image.tolist()
+                _, buffer = cv2.imencode('.jpg', image)
+                traffic_images[i] = base64.b64encode(buffer).decode('utf-8')
+                
             except Exception as e:
                 print(e)
             print(queues)
@@ -217,7 +221,8 @@ def get_queue():
     ), 500
 
     return jsonify({
-                "queues" : queues
+                "queues" : queues,
+                "traffic_images" : traffic_images
                 }), 200
 
 """
