@@ -52,6 +52,11 @@ const Metrics = () => {
     // Queue Data
     const [queueData, setQueueData] = useState([]);
     const [currQueue, setCurrQueue] = useState([]);
+
+    // Image Data
+    const [imageData, setImageData] = useState(null);
+    const [currImage, setCurrImage] = useState(null);
+
     const postQueue = async () => {
         const queue_url = metrics_base_url + "get_queue";
         const queue_data = { id: [id] };
@@ -72,6 +77,7 @@ const Metrics = () => {
             const result = await response.json();
             console.log(result)
             setQueueData(result['queues']);
+            setImageData(result['traffic_images'])
         } catch (error) {
             console.error('Error making the POST request to the get_queue service:', error);
         }
@@ -135,7 +141,12 @@ const Metrics = () => {
 
             setCurrQueue(transformedQueueData);
         }
-    }, [queueData, id]);
+
+        if (imageData && imageData[id]) {
+            setCurrImage("data:image/jpeg;base64," + imageData[id]);
+        }
+
+    }, [queueData, imageData, id]);
 
     return (
         <>
@@ -155,8 +166,8 @@ const Metrics = () => {
                         <CCardBody>
                             <div>
                                 <img
-                                    src={predictImage}
-                                    alt="Predicted Image"
+                                    src={currImage}
+                                    alt="Predicted Traffic Image"
                                     style={{ width: "100%", height: "auto" }}
                                 />
                             </div>
