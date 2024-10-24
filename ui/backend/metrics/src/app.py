@@ -164,9 +164,14 @@ def get_queue():
             try:
                 queue_result =  requests.post(detection_url + "/predict", files={"image" : image_bytes}).json()
                 if len(queue_result) == 0:
+                    _, buffer = cv2.imencode('.jpg', image)
+                    traffic_images[i] = base64.b64encode(buffer).decode('utf-8')
+                    
                     return jsonify(
                         {
-                            "Message": "no vehicles detected"
+                            "queues" : [],
+                            "traffic_images" : traffic_images,
+                            "message": "Road is empty"
                         }
                     ), 200
 
