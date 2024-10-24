@@ -48,7 +48,7 @@ const Metrics = () => {
 
     // Base URL
     const metrics_base_url = "http://localhost:3002/"
-    
+
     // Queue Data
     const [queueData, setQueueData] = useState([]);
     const [currQueue, setCurrQueue] = useState([]);
@@ -139,7 +139,7 @@ const Metrics = () => {
 
     return (
         <>
-            <h1>Metrics: {id}</h1>
+            <h4>Metrics: {id}</h4>
             <CRow>
                 <CCol xs={5}>
                     <CCard className="mb-4">
@@ -162,35 +162,27 @@ const Metrics = () => {
                             </div>
                         </CCardBody>
                     </CCard>
-                </CCol>
-                <CCol xs={5}>
-                    <CCard className="mb-12">
-                        <CCardBody>
-                            Related Roads
-                            <QueueTable queueData={currQueue} />
-                            <DensityMeter level={currDensity} />
 
-                        </CCardBody>
-                    </CCard>
                 </CCol>
-                <CCol xs={6}>
+                <CCol xs={4}>
                     <CCard className="mb-4">
                         <CCardHeader>
                             <strong>Queue Length</strong>
                         </CCardHeader>
                         <CCardBody>
-                            {/* {queueData} */}
-                            {/* <QueueTable queueData={queueData} /> */}
+                            <QueueTable queueData={currQueue} />
+
                         </CCardBody>
                     </CCard>
                 </CCol>
-                <CCol xs={6}>
-                    <CCard className="mb-4">
+                <CCol xs={3}>
+                <CCard className="mb-4">
                         <CCardHeader>
-                            <strong>Traffic Density</strong>
+                            <strong>Density</strong>
                         </CCardHeader>
                         <CCardBody>
-                            {/* <DensityMeter level={level} /> */}
+                            <DensityMeter level={currDensity} />
+
                         </CCardBody>
                     </CCard>
                 </CCol>
