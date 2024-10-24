@@ -12,6 +12,11 @@ import {
     CCardFooter,
     CCardHeader,
     CCol,
+    CModal,
+    CModalHeader,
+    CModalBody,
+    CModalTitle,
+    CModalFooter,
     CProgress,
     CRow,
     CTable,
@@ -148,6 +153,9 @@ const Metrics = () => {
 
     }, [queueData, imageData, id]);
 
+    // Image Model
+    const [visibleXL, setVisibleXL] = useState(false)
+
     return (
         <>
             <h4>Metrics: {id}</h4>
@@ -169,8 +177,23 @@ const Metrics = () => {
                                     src={currImage}
                                     alt="Predicted Traffic Image"
                                     style={{ width: "100%", height: "auto" }}
+                                    onClick={() => setVisibleXL(!visibleXL)}
                                 />
                             </div>
+                            <CModal size="xl" visible={visibleXL} onClose={() => setVisibleXL(false)}>
+                                <CModalHeader>
+                                    <CModalTitle>Predicted Traffic Image</CModalTitle>
+                                </CModalHeader>
+                                <CModalBody>
+                                    <div>
+                                        <img
+                                            src={currImage}
+                                            alt="Predicted Traffic Image"
+                                            style={{ width: "100%", height: "auto" }}
+                                        />
+                                    </div>
+                                </CModalBody>
+                            </CModal>
                         </CCardBody>
                     </CCard>
 
@@ -187,7 +210,7 @@ const Metrics = () => {
                     </CCard>
                 </CCol>
                 <CCol xs={3}>
-                <CCard className="mb-4">
+                    <CCard className="mb-4">
                         <CCardHeader>
                             <strong>Density</strong>
                         </CCardHeader>

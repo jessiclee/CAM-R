@@ -8,6 +8,7 @@ const MapDashboard = () => {
   const allMarkersRef = useRef([]); // Store all markers for filtering
   const [roadData, setRoadData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState(''); // New state for the search query
   const navigate = useNavigate();
   const roadsAPI = "http://localhost:3001/lane"
 
@@ -47,8 +48,6 @@ const MapDashboard = () => {
           }).addTo(map);
 
           mapInstanceRef.current = map;
-
-          // Create a layer group to hold markers
           const markersLayer = window.L.layerGroup().addTo(map);
           markersLayerRef.current = markersLayer;
 
@@ -73,24 +72,35 @@ const MapDashboard = () => {
               });
 
             marker.location = roads.road;
+            marker.cameraID = roads.camera;
             allMarkers.push(marker);
           });
 
           // Stores markers for filtering, removes all and adds them back if exists in the filter
           allMarkersRef.current = allMarkers; 
-          function filterMarkers(selectedLocation) {
+          function filterMarkers(selectedLocation, searchQuery) {
             markersLayer.clearLayers();
 
             allMarkersRef.current.forEach((marker) => {
-              if (selectedLocation === "all" || marker.location === selectedLocation) {
-                markersLayer.addLayer(marker);
+              const matchesSearch = searchQuery === "" || marker.cameraID.toString().includes(searchQuery); // Filter by camera ID
+              const matchesLocation = selectedLocation === "all" || marker.location === selectedLocation; // Filter by location
+
+              if (matchesSearch && matchesLocation) {
+                markersLayer.addLayer(marker); // Add marker back if it matches the filter
               }
             });
           }
 
           roadFilter.addEventListener("change", function () {
             const selectedLocation = this.value;
-            filterMarkers(selectedLocation);
+            filterMarkers(selectedLocation, searchQuery);
+          });
+
+          // Filter markers when search query changes
+          const searchInput = document.getElementById("cameraSearch");
+          searchInput.addEventListener("input", function () {
+            const searchQuery = this.value;
+            filterMarkers(roadFilter.value, searchQuery);
           });
         }
       };
@@ -106,7 +116,7 @@ const MapDashboard = () => {
         document.body.removeChild(script);
       };
     }
-  }, [roadData, navigate]); // Only runs after data is fetched
+  }, [roadData, navigate, searchQuery]); // Only runs after data is fetched
 
   // If road data is still not fetched
   if (loading) {
@@ -114,17 +124,20 @@ const MapDashboard = () => {
   }
 
   return (
-<div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", width: "100%" }}>
-  <div id="filter" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "10px", width: "100%", marginBottom: "10px" }}>
-    <p style={{ margin: "0 10px 0 0" }}><i className="fa-solid fa-filter"></i> Location:</p>
-    <select id="roadFilter" style={{ width: "200px", padding: "5px" }}>
-      <option value="all">All Locations</option>
-    </select>
-  </div>
-  <div id="map" ref={mapContainerRef} style={{ height: "350px", width: "100%" }}></div>
-</div>
-
-
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", width: "100%" }}>
+      <div id="filter" style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", padding: "10px", width: "100%" }}>
+        <select id="roadFilter" style={{ width: "200px", padding: "5px" }}>
+          <option value="all">ALL ROADS</option>
+        </select>
+        <input
+          id="cameraSearch"
+          type="text"
+          placeholder="Search Camera ID"
+          style={{ marginLeft: "20px", padding: "5px" }}
+        />
+      </div>
+      <div id="map" ref={mapContainerRef} style={{ height: "350px", width: "100%" }}></div>
+    </div>
   );
 };
 
